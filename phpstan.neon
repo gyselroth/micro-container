@@ -1,0 +1,9 @@
+parameters:
+    ignoreErrors:
+        - '#Function apc_exists not found#'
+        - '#Function apc_store not found#'
+        - '#Function apc_get not found#'
+
+    reportUnmatchedIgnoredErrors: false
+includes:
+    - vendor/phpstan/phpstan/conf/config.level1.neon
