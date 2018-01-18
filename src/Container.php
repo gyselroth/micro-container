@@ -190,7 +190,7 @@ class Container implements ContainerInterface
             return new $class();
         }
 
-        $args = $this->autowireMethod($name, $constructor, $config, $parents);
+        $args = $this->autoWireMethod($name, $constructor, $config, $parents);
         return $this->createInstance($name, $reflection, $args, $config, $parents);
     }
 
@@ -268,7 +268,7 @@ class Container implements ContainerInterface
                     throw new Exception\Configuration('method '.$call['method'].' is not callable in class '.$class->getName().' for service '.$name);
                 }
 
-                $arguments = $this->autowireMethod($name, $method, $call, $parents);
+                $arguments = $this->autoWireMethod($name, $method, $call, $parents);
                 call_user_func_array([&$instance, $call['method']], $arguments);
             }
         }

@@ -14,6 +14,6 @@ namespace Micro\Container\Exception;
 
 use Psr\Container\ContainerExceptionInterface;
 
-class Configuration extends \LogicException implements ContainerExceptionInterface
+class Logic extends \LogicException implements ContainerExceptionInterface
 {
 }
