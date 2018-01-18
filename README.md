@@ -24,7 +24,7 @@ composer require gyselroth/micro-container
 
 ## Documentation
 We all know how a DIC must work so we go directly to a example how to use it with a common dependency such as 
-a Monolog logger.
+a [Monolog](https://github.com/Seldaek/monolog) logger.
 
 ```php
 use Micro\Container\Container; 
@@ -73,7 +73,7 @@ $->get(LoggerInterface::class)->info('Hello world');
 ### Configuration
 The container only accepts one argument and this is a configuration. 
 Huge advantage is, that you can use anything you would like to configure your container.
-You can configure it directly via PHP like the example above or use a configuration file or even a configuration library such as (Noodlehouse\Config)[https://github.com/hassankhan/config].
+You can configure it directly via PHP like the example above or use a configuration file or even a configuration library such as [Noodlehouse\Config](https://github.com/hassankhan/config).
 
 Here is the same config but in YAML:
 ```yaml
@@ -102,7 +102,7 @@ Psr\Log\LoggerInterface:
           method: setFormatter
 ```
 
-Using (for example (Noodlehouse\Config)[https://github.com/hassankhan/config])) would result in:
+Using (for example [Noodlehouse\Config](https://github.com/hassankhan/config])) would result in:
 
 ```php
 use Noodlehouse\Config;
