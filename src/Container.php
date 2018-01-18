@@ -15,6 +15,8 @@ namespace Micro\Container;
 use Closure;
 use Psr\Container\ContainerInterface;
 use ReflectionClass;
+use ReflectionMethod;
+use Micro\Container\Exception;
 
 class Container implements ContainerInterface
 {
@@ -42,15 +44,12 @@ class Container implements ContainerInterface
     /**
      * Create container.
      *
-     * @param array $config
+     * @param Iterable $config
      */
     public function __construct(Iterable $config = [])
     {
         $this->config = $config;
-        $container = $this;
-        $this->add(ContainerInterface::class, function () use ($container) {
-            return $container;
-        });
+        $this->add(ContainerInterface::class, $this);
     }
 
     /**
@@ -66,14 +65,44 @@ class Container implements ContainerInterface
             return $this->service[$name]['instance'];
         }
         if (isset($this->registry[$name])) {
-            $this->service[$name]['instance'] = $this->registry[$name]->call($this);
-            unset($this->registry[$name]);
+            if( $this->registry[$name] instanceof Closure) {
+                $this->service[$name]['instance'] = $this->registry[$name]->call($this);
+            } else {
+                $this->service[$name]['instance'] = $this->registry[$name];
+            }
 
+            unset($this->registry[$name]);
             return $this->service[$name]['instance'];
         }
 
-        return $this->autoWire($name);
+        return $this->autoWireClass($name);
     }
+
+
+    /**
+     * Debug container service tree
+     *
+     * @return array
+     */
+    public function __debug(?array $container=null): array
+    {
+        if($container === null) {
+            $container = $this->service;
+        }
+
+        foreach($container as $name => &$service) {
+            if(isset($service['instance'])) {
+                $service['instance'] = 'instanceof '.get_class($service['instance']);
+            }
+
+            if(isset($service['services'])) {
+                $service['services'] = $this->__debug($service['services']);
+            }
+        }
+
+        return $container;
+    }
+
 
     /**
      * Get new instance (Do not store in container).
@@ -88,21 +117,21 @@ class Container implements ContainerInterface
             return $this->registry[$name]->call($this);
         }
 
-        return $this->autoWire($name);
+        return $this->autoWireClass($name);
     }
 
     /**
      * Add service.
      *
-     * @param string  $name
-     * @param Closure $service
+     * @param string $name
+     * @param mixed $service
      *
      * @return Container
      */
-    public function add(string $name, Closure $service): self
+    public function add(string $name, $service): self
     {
         if ($this->has($name)) {
-            throw new Exception('service '.$name.' is already registered');
+            throw new Exception\ServiceAlreadyExists('service '.$name.' is already registered');
         }
 
         $this->registry[$name] = $service;
@@ -123,36 +152,15 @@ class Container implements ContainerInterface
     }
 
     /**
-     * Get config value.
-     *
-     * @param string $name
-     * @param string $param
-     *
-     * @return mixed
-     */
-    public function getParam(string $name, string $param, ?Iterable $config = null)
-    {
-        if (null === $config) {
-            $config = $this->config;
-        }
-
-        if (!isset($config[$name]['options'][$param])) {
-            throw new Exception('no configuration available for required service parameter '.$param);
-        }
-
-        return $this->parseParam($config[$name]['options'][$param]);
-    }
-
-    /**
      * Auto wire.
      *
      * @param string   $name
-     * @param iterable $config
-     * @param array    $parents
+     * @param array $config
+     * @param array $parents
      *
      * @return mixed
      */
-    protected function autoWire(string $name, $config = null, array $parents = [])
+    protected function autoWireClass(string $name, ?array $config = null, array $parents = [])
     {
         if (null === $config) {
             $config = $this->config;
@@ -163,8 +171,6 @@ class Container implements ContainerInterface
         if (isset($config[$name])) {
             if (isset($config[$name]['use'])) {
                 $class = $config[$name]['use'];
-            } elseif (isset($config[$name]['name'])) {
-                $class = $config[$name]['name'];
             }
 
             $config = $config[$name];
@@ -175,7 +181,7 @@ class Container implements ContainerInterface
         try {
             $reflection = new ReflectionClass($class);
         } catch (\Exception $e) {
-            throw new Exception($class.' can not be resolved to an existing class');
+            throw new Exception\Configuration($class.' can not be resolved to an existing class for service '.$name);
         }
 
         $constructor = $reflection->getConstructor();
@@ -183,36 +189,8 @@ class Container implements ContainerInterface
         if (null === $constructor) {
             return new $class();
         }
-        $params = $constructor->getParameters();
-        $args = [];
 
-        foreach ($params as $param) {
-            $type = $param->getClass();
-            $param_name = $param->getName();
-
-            if (null === $type) {
-                try {
-                    $args[$param_name] = $this->getParam($name, $param_name, $sub_config);
-                } catch (Exception $e) {
-                    if ($param->isDefaultValueAvailable()) {
-                        $args[$param_name] = $param->getDefaultValue();
-                    } elseif ($param->allowsNull()) {
-                        $args[$param_name] = null;
-                    } else {
-                        throw $e;
-                    }
-                }
-            } else {
-                $type_class = $type->getName();
-
-                if ($type_class === $name) {
-                    throw new Exception('class '.$type_class.' can not depend on itself');
-                }
-
-                $args[$param_name] = $this->findParentService($name, $type_class, $config, $parents);
-            }
-        }
-
+        $args = $this->autowireMethod($name, $constructor, $config, $parents);
         return $this->createInstance($name, $reflection, $args, $config, $parents);
     }
 
@@ -221,20 +199,21 @@ class Container implements ContainerInterface
      *
      * @param string $name
      * @param string $class
-     * @param mixed  $config
-     * @param mixed  $parents
+     * @param mixed $config
+     * @param mixed $parents
      *
      * @return mixed
      */
-    protected function findParentService(string $name, string $class, $config, $parents)
+    protected function findParentService(string $name, ?string $class, $config, $parents)
     {
         $service = null;
         $services = $this->service;
+
         foreach (array_reverse($parents) as $name => $parent) {
             if (isset($services[$name])) {
                 $service = $services[$name];
-                if (isset($services['service'])) {
-                    $services = $services['service'];
+                if (isset($services['services'])) {
+                    $services = $services['services'];
                 } else {
                     break;
                 }
@@ -243,13 +222,9 @@ class Container implements ContainerInterface
             }
         }
 
-        if (null !== $service) {
-            return $service['instance'];
-        }
-
         foreach (array_reverse($parents) as $parent) {
-            if (isset($parent['service'][$class])) {
-                return $this->autoWire($class, $parent['service'], $parents);
+            if (isset($parent['services'][$class])) {
+                return $this->autoWireClass($class, $parent['services'], $parents);
             }
         }
 
@@ -266,7 +241,7 @@ class Container implements ContainerInterface
      *
      * @return mixed
      */
-    protected function createInstance(string $name, ReflectionClass $class, array $args, Iterable $config, $parents = [])
+    protected function createInstance(string $name, ReflectionClass $class, array $args, array $config, $parents = [])
     {
         $instance = $class->newInstanceArgs($args);
 
@@ -274,39 +249,27 @@ class Container implements ContainerInterface
         foreach ($parents as $p => $parent) {
             $loop = &$loop[$p];
         }
+
         if (0 === count($parents)) {
             $loop[$name]['instance'] = $instance;
         } else {
-            $loop['service'][$name]['instance'] = $instance;
+            $loop['services'][$name]['instance'] = $instance;
         }
 
         $parents[$name] = $config;
         $parents_orig = $parents;
 
-        array_unshift($parents, $name);
-
-        if ($instance instanceof AdapterAwareInterface) {
-            if (isset($config['adapter'])) {
-                $adapters = $config['adapter'];
-            } else {
-                $adapters = $instance->getDefaultAdapter();
-            }
-
-            foreach ($adapters as $adapter => $service) {
-                if (isset($service['enabled']) && false == $service['enabled']) {
-                    continue;
+        if(isset($config['calls'])) {
+            foreach($config['calls'] as $call) {
+                $arguments = [];
+                try {
+                    $method = $class->getMethod($call['method']);
+                } catch(\ReflectionException $e) {
+                    throw new Exception\Configuration('method '.$call['method'].' is not callable in class '.$class->getName().' for service '.$name);
                 }
 
-                $parents = $parents_orig;
-                $parents[$adapter] = $service;
-                $class = $adapter;
-                $adapter_instance = $this->autoWire($class, $adapters, $parents);
-
-                if (isset($service['expose']) && $service['expose']) {
-                    $this->service[$adapter]['instance'] = $adapter_instance;
-                }
-
-                $instance->injectAdapter($adapter_instance, $adapter);
+                $arguments = $this->autowireMethod($name, $method, $call, $parents);
+                call_user_func_array([&$instance, $call['method']], $arguments);
             }
         }
 
@@ -314,17 +277,62 @@ class Container implements ContainerInterface
     }
 
     /**
+     * Autowire method
+     *
+     * @param string $name
+     * @param ReflectionMethod $method
+     * @param array $config
+     * @param mixed $parents
+     * @return array
+     */
+    protected function autoWireMethod(string $name, ReflectionMethod $method, array $config, $parents): array
+    {
+        $params = $method->getParameters();
+        $args = [];
+
+        foreach ($params as $param) {
+            $type = $param->getClass();
+            $param_name = $param->getName();
+
+            if(isset($config['arguments'][$param_name])) {
+                $args[$param_name] = $this->parseParam($config['arguments'][$param_name], $name, $type, $config, $parents);
+            } elseif($type !== null) {
+                $type_class = $type->getName();
+
+                if ($type_class === $name) {
+                    throw new Exception\Logic('class '.$type_class.' can not depend on itself');
+                }
+
+                $args[$param_name] = $this->findParentService($name, $type_class, $config, $parents);
+            } elseif($param->isDefaultValueAvailable()) {
+                 $args[$param_name] = $param->getDefaultValue();
+            } elseif($param->allowsNull() && $param->hasType()) {
+                 $args[$param_name] = null;
+            } else {
+                throw new Exception\Configuration('no value found for argument '.$param_name.' in method '.$method->getName().' for service '.$name);
+            }
+        }
+
+        return $args;
+    }
+
+
+    /**
      * Parse param value.
      *
      * @param mixed $param
+     * @param string $name
+     * @param string $type_class
+     * @param array $config
+     * @param mixed $parents
      *
      * @return mixed
      */
-    protected function parseParam($param)
+    protected function parseParam($param, string $name, $type_class, array $config, $parents)
     {
         if (is_iterable($param)) {
             foreach ($param as $key => $value) {
-                $param[$key] = $this->parseParam($value);
+                $param[$key] = $this->parseParam($value, $name, $type_class, $config, $parents);
             }
 
             return $param;
@@ -340,10 +348,12 @@ class Container implements ContainerInterface
                     return str_replace($match[0], $match[3], $param);
                 }
                 if (false === $env) {
-                    throw new Exception('env variable '.$match[1].' required but it is neither set not a default value exists');
+                    throw new Exception\EnvVariableNotFound('env variable '.$match[1].' required but it is neither set not a default value exists');
                 }
 
                 return str_replace($match[0], $env, $param);
+            } elseif(preg_match('#^\{(.*)\}$#', $param, $match)) {
+                return $this->findParentService($match[1], $match[1], $config, $parents);
             }
 
             return $param;

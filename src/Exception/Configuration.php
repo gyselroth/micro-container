@@ -10,8 +10,10 @@ declare(strict_types=1);
  * @license     MIT https://opensource.org/licenses/MIT
  */
 
-namespace Micro\Container;
+namespace Micro\Container\Exception;
 
-class Exception extends \Exception
+use Psr\Container\ContainerExceptionInterface;
+
+class Configuration extends \Exception implements ContainerExceptionInterface
 {
 }
