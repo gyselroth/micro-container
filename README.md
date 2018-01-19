@@ -167,3 +167,35 @@ This leads to a cleaner and more readable configuration. Given the Monolog examp
 Therefore those can be requested directly from the container whereas `Monolog\Handler\StreamHandler` is a sub service of `Psr\Log\LoggerInterface` and can not be requested.
 The container tries to look up services from the bottom to the top. If there is service configured with the name the container is looking for it takes that configuration and injects the service at this level.
 If no service is found the container will look a level above and so on.
+
+### Using method result as service
+It is possible to define a service which does use the result of a method call of another service. Have a look at this example where we need 
+an instance of `MongoDB\Database` but this instance must be created from `MongoDB\Client`.
+```php
+[
+    \MongoDB\Client::class => [
+        'arguments' => [
+            'uri' => 'mongodb://localhost:27017',
+            'driverOptions' => [
+                'typeMap' => [
+                    'root' => 'array',
+                    'document' => 'array',
+                    'array' => 'array',
+                ]
+            ]
+        ],
+    ],
+    MongoDB\Database::class => [
+        'use' => '{MongoDB\Client}',
+        'selects' => [[
+            'method' => 'selectDatabase',
+            'arguments' => [
+                'databaseName' => 'balloon'
+            ]
+        ]]
+    ]
+]
+```
+Instead setting a specific class in the `use` statement you can wrap another service in `{}` to use that service as a parent service.
+The service `MongoDB\Database` is now actually an instance of `MongoDB\Client`. We can use the statement `selects` to call a method on that very instance
+and using the result of it as our service. `selects` also supports chaining since you need to define an array of methods anyway. Therefore if a seccond method is defined the method would be called on the result of the first selects method (And so on).
