@@ -208,6 +208,10 @@ class Container implements ContainerInterface
         }
 
         if (isset($config['use'])) {
+            if(!is_string($config['use'])) {
+                throw new Exception\Configuration('use must be a string for service '.$name);
+            }
+
             $class = $config['use'];
         }
 
