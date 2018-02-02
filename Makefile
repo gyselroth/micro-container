@@ -24,11 +24,10 @@ PHPSTAN_LOCK = $(BASE_DIR)/.phpstan.lock
 
 # TARGET ALIASES
 COMPOSER_TARGET = $(COMPOSER_LOCK)
-PHPCS_FIX_TARGET = $(PHPCS_FIXER_LOCK)
 PHPCS_CHECK_TARGET = $(PHPCS_FIXER_LOCK)
 PHPUNIT_TARGET = $(PHPUNIT_LOCK)
 PHPSTAN_TARGET = $(PHPSTAN_LOCK)
-BUILD_TARGET = $(COMPOSER_TARGET) $(PHPUNIT_TARGET) $(PHPSTAN_TARGET) $(PHPCS_FIXER_TARGET)
+BUILD_TARGET = $(COMPOSER_TARGET) $(PHPUNIT_TARGET) $(PHPSTAN_TARGET) $(PHPCS_CHECK_TARGET)
 
 # MACROS
 macro_find_phpfiles = $(shell find $(1) -type f -name "*.php")
@@ -61,22 +60,12 @@ $(COMPOSER_TARGET) $(PHPCS_FIXER_SCRIPT) $(PHPUNIT_SCRIPT) $(PHPSTAN_SCRIPT): $(
 	$(COMPOSER_BIN) update
 	@touch $@
 
-
-.PHONY: phpcs-check
-phpcs-check: $(PHPCS_FIXER_TARGET)
+.PHONY: phpcs
+phpcs: $(PHPCS_CHECK_TARGET)
 
 $(PHPCS_CHECK_TARGET): $(PHPCS_FIXER_SCRIPT) $(PHP_FILES) $(COMPOSER_LOCK)
-	$(PHP_BIN) $(PHPCS_FIXER_SCRIPT)  fix --config=.php_cs.dist -v --dry-run --allow-risky --stop-on-violation --using-cache=no
+	$(PHP_BIN) $(PHPCS_FIXER_SCRIPT)  fix --config=.php_cs.dist -v --dry-run --allow-risky=yes --stop-on-violation --using-cache=no
 	@touch $@
-
-
-.PHONY: phpcs-fix
-phpcs-fix: $(PHPCS_FIXER_TARGET)
-
-$(PHPCS_FIX_TARGET): $(PHPCS_FIXER_SCRIPT) $(PHP_FILES) $(COMPOSER_LOCK)
-	$(PHP_BIN) $(PHPCS_FIXER_SCRIPT)  fix --config=.php_cs.dist -v
-	@touch $@
-
 
 .PHONY: test
 test: $(PHPUNIT_TARGET)
