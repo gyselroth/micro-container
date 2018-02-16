@@ -56,7 +56,8 @@ class Container implements ContainerInterface
     /**
      * Create container.
      *
-     * @param iterable $config
+     * @param iterable           $config
+     * @param ContainerInterface $parent
      */
     public function __construct(Iterable $config = [], ?ContainerInterface $parent = null)
     {
@@ -119,22 +120,6 @@ class Container implements ContainerInterface
         }
 
         throw new Exception\ServiceNotFound("service $name was not found in service tree");
-    }
-
-    /**
-     * Get new instance (Do not store in container).
-     *
-     * @param string $name
-     *
-     * @return mixed
-     */
-    public function getNew(string $name)
-    {
-        if (isset($this->registry[$name])) {
-            return $this->registry[$name]->call($this);
-        }
-
-        return $this->autoWireClass($name);
     }
 
     /**
