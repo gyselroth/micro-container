@@ -173,30 +173,6 @@ class Container implements ContainerInterface
     }
 
     /**
-     * Create service config.
-     *
-     * @param string $name
-     *
-     * @return array
-     */
-    protected function createServiceConfig(string $name): array
-    {
-        $config = [];
-        $parents = array_merge(class_implements($name), class_parents($name));
-        foreach ($parents as $parent) {
-            if (isset($this->config[$parent])) {
-                $config = array_merge($config, $this->config[$parent]);
-            }
-        }
-
-        if (isset($this->config[$name])) {
-            $config = array_merge($config, $this->config[$name]);
-        }
-
-        return $config;
-    }
-
-    /**
      * Auto wire.
      *
      * @param string $name
@@ -220,8 +196,6 @@ class Container implements ContainerInterface
             }
 
             $class = $config['use'];
-        } else {
-            $config = $this->createServiceConfig($name);
         }
 
         if (preg_match('#^\{(.*)\}$#', $class, $match)) {
@@ -236,7 +210,7 @@ class Container implements ContainerInterface
                 }
             }
 
-            return $this->storeService($name, $config, $service);
+            return $this->service[$name] = $service;
         }
 
         try {
@@ -257,26 +231,6 @@ class Container implements ContainerInterface
     }
 
     /**
-     * Store service.
-     *
-     * @param param string $name
-     * @param array        $config
-     * @param mixed        $service
-     *
-     * @return mixed
-     */
-    protected function storeService(string $name, array $config, $service)
-    {
-        if (isset($config['singleton']) && true === $config['singleton']) {
-            return $service;
-        }
-
-        $this->service[$name] = $service;
-
-        return $service;
-    }
-
-    /**
      * Create instance.
      *
      * @param string          $name
@@ -289,7 +243,7 @@ class Container implements ContainerInterface
     protected function createInstance(string $name, ReflectionClass $class, array $arguments, array $config)
     {
         $instance = $class->newInstanceArgs($arguments);
-        $this->storeService($name, $config, $instance);
+        $this->service[$name] = $instance;
 
         if (isset($this->config[$name]['calls'])) {
             foreach ($this->config[$name]['calls'] as $call) {
@@ -376,18 +330,20 @@ class Container implements ContainerInterface
                     return $param;
                 }
 
-                for ($i = -1, $i < 1; ++$i;) {
+                for ($i = 0; $i < 1; ++$i) {
                     $env = getenv($matches[1][$i]);
                     if (false === $env && !empty($matches[3][$i])) {
-                        return str_replace($matches[0][$i], $matches[3][$i], $param);
-                    }
-                    if (false === $env) {
+                        $param = str_replace($matches[0][$i], $matches[3][$i], $param);
+                    } elseif (false === $env) {
                         throw new Exception\EnvVariableNotFound('env variable '.$matches[1][$i].' required but it is neither set not a default value exists');
+                    } else {
+                        $param = str_replace($matches[0][$i], $env, $param);
                     }
-
-                    return str_replace($matches[0][$i], $env, $param);
                 }
+
+                return $param;
             }
+
             if (preg_match('#^\{(.*)\}$#', $param, $matches)) {
                 return $this->findService($name, $matches[1]);
             }
