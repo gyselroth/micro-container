@@ -327,23 +327,25 @@ class Container implements ContainerInterface
             return $param;
         }
         if (is_string($param)) {
-            if (preg_match('#\{ENV\(([A-Za-z0-9_]+)(?:(,?)(.*))\)\}#', $param, $match)) {
-                if (4 !== count($match)) {
+            if ($found = preg_match_all('#\{ENV\(([A-Za-z0-9_]+)(?:(,?)([^}]*))\)\}#', $param, $matches)) {
+                if (4 !== count($matches)) {
                     return $param;
                 }
 
-                $env = getenv($match[1]);
-                if (false === $env && !empty($match[3])) {
-                    return str_replace($match[0], $match[3], $param);
-                }
-                if (false === $env) {
-                    throw new Exception\EnvVariableNotFound('env variable '.$match[1].' required but it is neither set not a default value exists');
-                }
+                for ($i = -1, $i < 1; ++$i;) {
+                    $env = getenv($matches[1][$i]);
+                    if (false === $env && !empty($matches[3][$i])) {
+                        return str_replace($matches[0][$i], $matches[3][$i], $param);
+                    }
+                    if (false === $env) {
+                        throw new Exception\EnvVariableNotFound('env variable '.$matches[1][$i].' required but it is neither set not a default value exists');
+                    }
 
-                return str_replace($match[0], $env, $param);
+                    return str_replace($matches[0][$i], $env, $param);
+                }
             }
-            if (preg_match('#^\{(.*)\}$#', $param, $match)) {
-                return $this->findService($name, $match[1]);
+            if (preg_match('#^\{(.*)\}$#', $param, $matches)) {
+                return $this->findService($name, $matches[1]);
             }
 
             return $param;
