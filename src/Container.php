@@ -173,6 +173,30 @@ class Container implements ContainerInterface
     }
 
     /**
+     * Create service config.
+     *
+     * @param string $name
+     *
+     * @return array
+     */
+    protected function createServiceConfig(string $name): array
+    {
+        $config = [];
+        $parents = array_merge(class_implements($name), class_parents($name));
+        foreach ($parents as $parent) {
+            if (isset($this->config[$parent])) {
+                $config = array_merge($config, $this->config[$parent]);
+            }
+        }
+
+        if (isset($this->config[$name])) {
+            $config = array_merge($config, $this->config[$name]);
+        }
+
+        return $config;
+    }
+
+    /**
      * Auto wire.
      *
      * @param string $name
@@ -196,6 +220,8 @@ class Container implements ContainerInterface
             }
 
             $class = $config['use'];
+        } else {
+            $config = $this->createServiceConfig($name);
         }
 
         if (preg_match('#^\{(.*)\}$#', $class, $match)) {
@@ -210,7 +236,7 @@ class Container implements ContainerInterface
                 }
             }
 
-            return $this->service[$name] = $service;
+            return $this->storeService($name, $config, $service);
         }
 
         try {
@@ -231,6 +257,26 @@ class Container implements ContainerInterface
     }
 
     /**
+     * Store service.
+     *
+     * @param param string $name
+     * @param array        $config
+     * @param mixed        $service
+     *
+     * @return mixed
+     */
+    protected function storeService(string $name, array $config, $service)
+    {
+        if (isset($config['singleton']) && true === $config['singleton']) {
+            return $service;
+        }
+
+        $this->service[$name] = $service;
+
+        return $service;
+    }
+
+    /**
      * Create instance.
      *
      * @param string          $name
@@ -243,7 +289,7 @@ class Container implements ContainerInterface
     protected function createInstance(string $name, ReflectionClass $class, array $arguments, array $config)
     {
         $instance = $class->newInstanceArgs($arguments);
-        $this->service[$name] = $instance;
+        $this->storeService($name, $config, $instance);
 
         if (isset($this->config[$name]['calls'])) {
             foreach ($this->config[$name]['calls'] as $call) {
