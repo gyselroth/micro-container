@@ -74,7 +74,8 @@ class Container implements ContainerInterface
      */
     public function get($name)
     {
-        if ($service = null !== $this->resolve($name)) {
+        $service = $this->resolve($name);
+        if ($service !== null) {
             return $service;
         }
 
@@ -94,7 +95,8 @@ class Container implements ContainerInterface
      */
     public function lookupService(string $name)
     {
-        if ($service = null !== $this->resolve($name)) {
+        $service = $this->resolve($name);
+        if ($service !== null) {
             return $service;
         }
 
