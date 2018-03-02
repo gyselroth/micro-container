@@ -74,16 +74,8 @@ class Container implements ContainerInterface
      */
     public function get($name)
     {
-        if ($this->has($name)) {
-            return $this->service[$name];
-        }
-
-        if (isset($this->registry[$name])) {
-            return $this->addStaticService($name);
-        }
-
-        if (isset($this->config[$name])) {
-            return $this->autoWireClass($name);
+        if ($service = null !== $this->resolve($name)) {
+            return $service;
         }
 
         try {
@@ -102,16 +94,8 @@ class Container implements ContainerInterface
      */
     public function lookupService(string $name)
     {
-        if ($this->has($name)) {
-            return $this->service[$name];
-        }
-
-        if (isset($this->registry[$name])) {
-            return $this->addStaticService($name);
-        }
-
-        if (isset($this->config[$name])) {
-            return $this->autoWireClass($name);
+        if ($service = null !== $this->resolve($name)) {
+            return $service;
         }
 
         if (null !== $this->parent) {
@@ -150,6 +134,30 @@ class Container implements ContainerInterface
     public function has($name): bool
     {
         return isset($this->service[$name]);
+    }
+
+    /**
+     * Resolve service.
+     *
+     * @param string $name
+     *
+     * @return mixed
+     */
+    protected function resolve(string $name)
+    {
+        if ($this->has($name)) {
+            return $this->service[$name];
+        }
+
+        if (isset($this->registry[$name])) {
+            return $this->addStaticService($name);
+        }
+
+        if (isset($this->config[$name])) {
+            return $this->autoWireClass($name);
+        }
+
+        return null;
     }
 
     /**
@@ -216,7 +224,7 @@ class Container implements ContainerInterface
 
         if (isset($config['use'])) {
             if (!is_string($config['use'])) {
-                throw new Exception\Configuration('use must be a string for service '.$name);
+                throw new Exception\InvalidConfiguration('use must be a string for service '.$name);
             }
 
             $class = $config['use'];
@@ -291,23 +299,25 @@ class Container implements ContainerInterface
         $instance = $class->newInstanceArgs($arguments);
         $this->storeService($name, $config, $instance);
 
-        if (isset($this->config[$name]['calls'])) {
-            foreach ($this->config[$name]['calls'] as $call) {
-                if (!isset($call['method'])) {
-                    throw new Exception\Configuration('method is required for setter injection in service '.$name);
-                }
+        if (!isset($this->config[$name]['calls'])) {
+            return $instance;
+        }
 
-                $arguments = [];
-
-                try {
-                    $method = $class->getMethod($call['method']);
-                } catch (\ReflectionException $e) {
-                    throw new Exception\Configuration('method '.$call['method'].' is not callable in class '.$class->getName().' for service '.$name);
-                }
-
-                $arguments = $this->autoWireMethod($name, $method, $call);
-                call_user_func_array([&$instance, $call['method']], $arguments);
+        foreach ($this->config[$name]['calls'] as $call) {
+            if (!isset($call['method'])) {
+                throw new Exception\InvalidConfiguration('method is required for setter injection in service '.$name);
             }
+
+            $arguments = [];
+
+            try {
+                $method = $class->getMethod($call['method']);
+            } catch (\ReflectionException $e) {
+                throw new Exception\InvalidConfiguration('method '.$call['method'].' is not callable in class '.$class->getName().' for service '.$name);
+            }
+
+            $arguments = $this->autoWireMethod($name, $method, $call);
+            call_user_func_array([&$instance, $call['method']], $arguments);
         }
 
         return $instance;
@@ -337,7 +347,7 @@ class Container implements ContainerInterface
                 $type_class = $type->getName();
 
                 if ($type_class === $name) {
-                    throw new Exception\Logic('class '.$type_class.' can not depend on itself');
+                    throw new Exception\InvalidConfiguration('class '.$type_class.' can not depend on itself');
                 }
 
                 $args[$param_name] = $this->findService($name, $type_class);
@@ -346,7 +356,7 @@ class Container implements ContainerInterface
             } elseif ($param->allowsNull() && $param->hasType()) {
                 $args[$param_name] = null;
             } else {
-                throw new Exception\Configuration('no value found for argument '.$param_name.' in method '.$method->getName().' for service '.$name);
+                throw new Exception\InvalidConfiguration('no value found for argument '.$param_name.' in method '.$method->getName().' for service '.$name);
             }
         }
 
