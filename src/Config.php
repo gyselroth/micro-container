@@ -91,20 +91,35 @@ class Config
             }
 
             for ($i = 0; $i < 1; ++$i) {
-                $env = getenv($matches[1][$i]);
-                if (false === $env && !empty($matches[3][$i])) {
-                    $param = str_replace($matches[0][$i], $matches[3][$i], $param);
-                } elseif (false === $env) {
-                    throw new Exception\EnvVariableNotFound('env variable '.$matches[1][$i].' required but it is neither set not a default value exists');
-                } else {
-                    $param = str_replace($matches[0][$i], $env, $param);
-                }
+                $param = $this->parseEnv($param, $matches, $i);
             }
 
             return $param;
         }
 
         return $param;
+    }
+
+    /**
+     * Parse env.
+     *
+     * @param string $param
+     * @param array  $variables
+     * @param int    $key
+     *
+     * @return string
+     */
+    protected function parseEnv(string $param, array $variables, int $key): string
+    {
+        $env = getenv($variables[1][$key]);
+        if (false === $env && !empty($variables[3][$key])) {
+            return str_replace($variables[0][$key], $variables[3][$key], $param);
+        }
+        if (false === $env) {
+            throw new Exception\EnvVariableNotFound('env variable '.$variables[1][$key].' required but it is neither set not a default value exists');
+        }
+
+        return str_replace($variables[0][$key], $env, $param);
     }
 
     /**
@@ -130,6 +145,20 @@ class Config
             return $config;
         }
 
+        return $this->mergeServiceConfig($name, $class, $config);
+    }
+
+    /**
+     * Find parent classes or interfaces and merge service configurations.
+     *
+     * @param string $name
+     * @param string $class
+     * @param array  $config
+     *
+     * @return array
+     */
+    protected function mergeServiceConfig(string $name, string $class, array $config): array
+    {
         $parents = array_merge(class_implements($class), class_parents($class));
         foreach ($parents as $parent) {
             if (isset($this->config[$parent])) {

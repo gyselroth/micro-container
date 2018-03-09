@@ -228,18 +228,7 @@ class Container implements ContainerInterface
         $class = $config['use'];
 
         if (preg_match('#^\{(.*)\}$#', $class, $match)) {
-            $service = $this->get($match[1]);
-
-            if (isset($config['selects'])) {
-                $reflection = new ReflectionClass(get_class($service));
-
-                foreach ($config['selects'] as $select) {
-                    $args = $this->autoWireMethod($name, $reflection->getMethod($select['method']), $select);
-                    $service = call_user_func_array([&$service, $select['method']], $args);
-                }
-            }
-
-            return $this->storeService($name, $config, $service);
+            return $this->wireReference($name, $match[1], $config);
         }
 
         try {
@@ -257,6 +246,31 @@ class Container implements ContainerInterface
         $args = $this->autoWireMethod($name, $constructor, $config);
 
         return $this->createInstance($name, $reflection, $args, $config);
+    }
+
+    /**
+     * Wire named referenced service.
+     *
+     * @param string $name
+     * @param string $refrence
+     * @param array  $config
+     *
+     * @return mixed
+     */
+    protected function wireReference(string $name, string $reference, array $config)
+    {
+        $service = $this->get($reference);
+
+        if (isset($config['selects'])) {
+            $reflection = new ReflectionClass(get_class($service));
+
+            foreach ($config['selects'] as $select) {
+                $args = $this->autoWireMethod($name, $reflection->getMethod($select['method']), $select);
+                $service = call_user_func_array([&$service, $select['method']], $args);
+            }
+        }
+
+        return $this->storeService($name, $config, $service);
     }
 
     /**
