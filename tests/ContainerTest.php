@@ -16,9 +16,6 @@ use Micro\Container\Exception;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 
-/**
- * @coversNothing
- */
 class ContainerTest extends TestCase
 {
     public function testAddCallable()
