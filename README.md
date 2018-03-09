@@ -103,7 +103,7 @@ Psr\Log\LoggerInterface:
           method: setFormatter
 ```
 
-Using (for example [Noodlehaus\Config](https://github.com/hassankhan/config])) would result in:
+Using (for example [Noodlehaus\Config](https://github.com/hassankhan/config)) would result in:
 
 ```php
 use Noodlehaus\Config;
