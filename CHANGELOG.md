@@ -3,6 +3,8 @@
 **Date**: Fri Mar 09 10:39:05 CET 2018
 
 * [FEATURE] Configure services of the same type via parent classes or interfaces
+* [FEATURE] Support for singletons
+* [CHANGE] Added various new unit tests
 * [CHANGE] Exracted configuration into Micro\Container\Config
 
 

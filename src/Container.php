@@ -70,7 +70,7 @@ class Container implements ContainerInterface
     {
         $this->config = new Config($config);
         $this->parent = $parent;
-        $this->add(ContainerInterface::class, $this);
+        $this->service[ContainerInterface::class] = $this;
     }
 
     /**
@@ -240,7 +240,7 @@ class Container implements ContainerInterface
         $constructor = $reflection->getConstructor();
 
         if (null === $constructor) {
-            return new $class();
+            return $this->storeService($name, $config, new $class());
         }
 
         $args = $this->autoWireMethod($name, $constructor, $config);
@@ -287,7 +287,6 @@ class Container implements ContainerInterface
         if (isset($config['singleton']) && true === $config['singleton']) {
             return $service;
         }
-
         $this->service[$name] = $service;
 
         if (isset($this->children[$name])) {

@@ -74,7 +74,7 @@ test: $(PHPUNIT_TARGET)
 phpunit: $(PHPUNIT_TARGET)
 
 $(PHPUNIT_TARGET): $(PHPUNIT_SCRIPT) $(PHP_FILES) $(PHP_UNITTEST_FILES)
-	$(PHP_BIN) $(PHPUNIT_SCRIPT) --stderr --debug --bootstrap $(PHPUNIT_BOOTSTRAP_SCRIPT) $(TESTS_DIR)
+	$(PHP_BIN) $(PHPUNIT_SCRIPT) -c phpunit.xml --stderr --debug
 	@touch $@
 
 

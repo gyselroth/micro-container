@@ -65,11 +65,7 @@ class Config
             $config = $this->compiled[$name];
         }
 
-        if (isset($config['use'])) {
-            if (!is_string($config['use'])) {
-                throw new Exception\InvalidConfiguration('use must be a string for service '.$name);
-            }
-        } else {
+        if (!isset($config['use'])) {
             $config['use'] = $name;
         }
 
@@ -138,6 +134,10 @@ class Config
 
         $class = $name;
         if (isset($config['use'])) {
+            if (!is_string($config['use'])) {
+                throw new Exception\InvalidConfiguration('use must be a string for service '.$name);
+            }
+
             $class = $config['use'];
         }
 
@@ -159,6 +159,10 @@ class Config
      */
     protected function mergeServiceConfig(string $name, string $class, array $config): array
     {
+        if (!class_exists($class)) {
+            return $config;
+        }
+
         $parents = array_merge(class_implements($class), class_parents($class));
         foreach ($parents as $parent) {
             if (isset($this->config[$parent])) {
