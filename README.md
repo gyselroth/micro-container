@@ -1,5 +1,6 @@
 # Micro Dependency Injection Container
 [![Build Status](https://travis-ci.org/gyselroth/micro-container.svg?branch=master)](https://travis-ci.org/gyselroth/micro-container)
+[![Code Coverage](https://scrutinizer-ci.com/g/gyselroth/micro-container/badges/coverage.png?b=master)](https://scrutinizer-ci.com/g/gyselroth/micro-container/?branch=master)
 [![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/gyselroth/micro-container/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/gyselroth/micro-container/?branch=master)
 [![Latest Stable Version](https://img.shields.io/packagist/v/gyselroth/micro-container.svg)](https://packagist.org/packages/gyselroth/micro-container)
 [![GitHub release](https://img.shields.io/github/release/gyselroth/micro-container.svg)](https://github.com/gyselroth/micro-container/releases)
@@ -46,7 +47,7 @@ $config = [
         'services' => [
             StreamHandler::class => [
                 'arguments' => [
-                    'stream' => '/tmp/my_app.log',
+                    'stream' => '{ENV(LOG_FOLDER),/tmp}/my_app.log',
                     'level' => 100
                 ]
                 'calls' => [
@@ -66,14 +67,14 @@ $config = [
     ]
 ];
 
-$container =new Container($config);
+$container = new Container($config);
 $->get(LoggerInterface::class)->info('Hello world');
 ```
 
 ### Configuration
 The container only accepts one argument and this is a configuration. 
 Huge advantage is, that you can use anything you would like to configure your container.
-You can configure it directly via PHP like the example above or use a configuration file or even a configuration library such as [Noodlehouse\Config](https://github.com/hassankhan/config).
+You can configure it directly via PHP like the example above or use a configuration file or even a configuration library such as [Noodlehaus\Config](https://github.com/hassankhan/config).
 
 Here is the same config but in YAML:
 ```yaml
@@ -102,10 +103,10 @@ Psr\Log\LoggerInterface:
           method: setFormatter
 ```
 
-Using (for example [Noodlehouse\Config](https://github.com/hassankhan/config])) would result in:
+Using (for example [Noodlehaus\Config](https://github.com/hassankhan/config])) would result in:
 
 ```php
-use Noodlehouse\Config;
+use Noodlehaus\Config;
 use Micro\Container\Container;
 
 $path = __DIR__.DIRECTORY_SEPARATOR.'*.yaml';
@@ -119,8 +120,26 @@ Also it is not required that you configure a service explicitly which is request
 If it is not configured but can be resolved anyway you're good to go.
 
 ### Constructor injection
-You can pass constructor arguments via `arguments`. **Attention**: The container is based on named arguments.
+You can pass constructor arguments via the keyword `arguments`. **Attention**: The container is based on named arguments.
 Order does not matter but you need to name the arguments as they are defined in the constructor of a class itself.
+
+Example:
+```php
+$config = [
+    MongoDB\Client::class => [
+        'arguments' => [
+            'uri' => 'mongodb://localhost:27017',
+            'driverOptions' => [
+                'typeMap' => [
+                    'root' => 'array',
+                    'document' => 'array',
+                    'array' => 'array',
+                ]
+            ]
+        ],
+    ],
+]
+```
 
 ### Setter injection
 Setter inection is done via `calls`. Again arguments must be named. Ordering doesn't matter. The container tries to resolve all arguments where it can be done
@@ -149,6 +168,29 @@ The same goes with an unnamed call:
 ]
 ```
 
+Example:
+```php
+$config = [
+    LoggerInterface::class => [
+        'use' => Logger::class,
+        'calls' => [
+            StreamHandler::class => [
+                'method' => 'pushHandler',
+                'arguments' => ['handler' => '{'.StreamHandler::class.'}']
+            ],
+        ],
+        'services' => [
+            StreamHandler::class => [
+                'arguments' => [
+                    'stream' => 'my_file.log',
+                    'level' => 100
+                ]
+            ]
+        ]
+    ],
+];
+```
+
 ### Reference to other services
 If you want to pass another service you can wrap your value into `{service name}`. This will let the container to search for a service called 'service name'.
 
@@ -156,10 +198,66 @@ If you want to pass another service you can wrap your value into `{service name}
 A service named with an interface name like `Psr\Log\LoggerInterface` can be configured to use specific implementation like `Monolog\Logger` via the 
 keyword `use`.
 
+Example:
+```php
+$config = [
+    LoggerInterface::class => [
+        'use' => Logger::class,
+    ]
+];
+```
+This will configure the dic to return an instance of Logger::class if an implementation of LoggerInteface::class is required.
+
+
 ### Values and environment variables
 Passing values work like passing service references. The only difference is that static values must not be wrapped in `{}`.
 It is also possible to read values from environment variables. This can be done like `{ENV(LOG_FOLDER)}` or with an optional default
 value `{ENV(LOG_FOLDER,/tmp)}`. If the variable is found it will use the value of `LOG_FOLDER` otherwise the default value. If no default value is given and the env variable was not found an exception `Micro\Container\Exception\EnvVariableNotFound` will be thrown.
+
+Example:
+```php
+$config = [
+    LoggerInterface::class => [
+        'use' => Logger::class,
+        'calls' => [
+            StreamHandler::class => [
+                'method' => 'pushHandler',
+                'arguments' => ['handler' => '{'.StreamHandler::class.'}']
+            ],
+        ],
+        'services' => [
+            StreamHandler::class => [
+                'arguments' => [
+                    'stream' => '{ENV(LOG_FOLDER),logs}/my_file.log',
+                    'level' => 100
+                ]
+            ]
+        ]
+    ],
+];
+```
+
+### Singletons
+You may want to declare a service as a singleton (The default is `false`). If you do so everytime the
+service gets requested a new instance will be created. This can be achieved by setting the keyword `singleton` to true.
+
+Example:
+```php
+$config = [
+    SmtpTransport::class => [
+        'arguments' => [
+            'server' => '127.0.0.1'
+        ],
+        'singleton' => true
+    ]
+];
+
+$container = new Container($config);
+$a = $container->get(SmtpTransport::class);
+$b = $container->get(SmtpTransport::class);
+```
+
+`$a` and `$b` are different instances now. 
 
 ### Exposing and nesting services
 Services configured at the top level of the configuration are exposed by default. You can nest services via `services` to hide services within the container.
@@ -168,12 +266,68 @@ Therefore those can be requested directly from the container whereas `Monolog\Ha
 The container tries to look up services from the bottom to the top. If there is service configured with the name the container is looking for it takes that configuration and injects the service at this level.
 If no service is found the container will look a level above and so on.
 
+Example:
+```php
+$config = [
+    LoggerInterface::class => [
+        'use' => Logger::class,
+        'calls' => [
+            StreamHandler::class => [
+                'method' => 'pushHandler',
+                'arguments' => ['handler' => '{'.StreamHandler::class.'}']
+            ],
+        ],
+        'services' => [
+            StreamHandler::class => [
+                'arguments' => [
+                    'stream' => '/my_file.log',
+                    'level' => 100
+                ]
+            ]
+        ]
+    ],
+];
+```
+
+In the above example the service `StreamHandler::class` is a sub service of `LoggerInterface::class` and can not be requested directly from the container.
+
+### Configuring services via parent classes or interfaces
+It is also possible to configure services of the same type with one decleration.
+All declerations get merged during requesting a service.
+
+Example:
+```php
+$config = [
+    JobInterface::class => [
+        'arguments' => [
+            'bar' => 'foo'
+        ],
+        'singleton' => true
+    ],
+    Job\C::class => [
+        'arguments' => [
+            'bar' => 'bar'
+        ]
+    ]
+];
+
+$container = new Container($config);
+$a = $container->get(Job\A::class);
+$b = $container->get(Job\B::class);
+$c = $container->get(Job\C::class);
+```
+
+All implementations of `JobInterface::class` are now singletons and have a constructor argument `bar` set to foo
+expect `Job\C::class` which is also a singleton but the constructor argument `bar` is set too bar.
+
+This also works for nested services and the whole sub service tree get merged with declerations of the same type.
+
 ### Using method result as service
 It is possible to define a service which does use the result of a method call of another service. Have a look at this example where we need 
 an instance of `MongoDB\Database` but this instance must be created from `MongoDB\Client`.
 ```php
-[
-    \MongoDB\Client::class => [
+$config = [
+    MongoDB\Client::class => [
         'arguments' => [
             'uri' => 'mongodb://localhost:27017',
             'driverOptions' => [
