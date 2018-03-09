@@ -21,9 +21,9 @@ class Container implements ContainerInterface
     /**
      * Config.
      *
-     * @var iterable
+     * @var Config
      */
-    protected $config = [];
+    protected $config;
 
     /**
      * Service registry.
@@ -54,13 +54,21 @@ class Container implements ContainerInterface
     protected $children = [];
 
     /**
+     * Parent service.
+     *
+     * @var mixed
+     */
+    protected $parent_service;
+
+    /**
      * Create container.
      *
-     * @param iterable $config
+     * @param iterable           $config
+     * @param ContainerInterface $parent
      */
     public function __construct(Iterable $config = [], ?ContainerInterface $parent = null)
     {
-        $this->config = $config;
+        $this->config = new Config($config);
         $this->parent = $parent;
         $this->add(ContainerInterface::class, $this);
     }
@@ -139,6 +147,21 @@ class Container implements ContainerInterface
     }
 
     /**
+     * Set parent service on container
+     * (Used internally, there is no point to call this method directly).
+     *
+     * @param mixed $service
+     *
+     * @return ContainerInterface
+     */
+    public function setParentService($service): ContainerInterface
+    {
+        $this->parent_service = $service;
+
+        return $this;
+    }
+
+    /**
      * Resolve service.
      *
      * @param string $name
@@ -155,8 +178,16 @@ class Container implements ContainerInterface
             return $this->addStaticService($name);
         }
 
-        if (isset($this->config[$name])) {
+        if ($this->config->has($name)) {
             return $this->autoWireClass($name);
+        }
+
+        if (null !== $this->parent_service) {
+            $parents = array_merge([$name], class_implements($this->parent_service), class_parents($this->parent_service));
+
+            if (in_array($name, $parents, true) && $this->parent_service instanceof $name) {
+                return $this->parent_service;
+            }
         }
 
         return null;
@@ -183,30 +214,6 @@ class Container implements ContainerInterface
     }
 
     /**
-     * Create service config.
-     *
-     * @param string $name
-     *
-     * @return array
-     */
-    protected function createServiceConfig(string $name): array
-    {
-        $config = [];
-        $parents = array_merge(class_implements($name), class_parents($name));
-        foreach ($parents as $parent) {
-            if (isset($this->config[$parent])) {
-                $config = array_merge($config, $this->config[$parent]);
-            }
-        }
-
-        if (isset($this->config[$name])) {
-            $config = array_merge($config, $this->config[$name]);
-        }
-
-        return $config;
-    }
-
-    /**
      * Auto wire.
      *
      * @param string $name
@@ -217,30 +224,16 @@ class Container implements ContainerInterface
      */
     protected function autoWireClass(string $name)
     {
-        $class = $name;
-        $config = [];
-
-        if (isset($this->config[$name])) {
-            $config = $this->config[$name];
-        }
-
-        if (isset($config['use'])) {
-            if (!is_string($config['use'])) {
-                throw new Exception\InvalidConfiguration('use must be a string for service '.$name);
-            }
-
-            $class = $config['use'];
-        } else {
-            $config = $this->createServiceConfig($name);
-        }
+        $config = $this->config->get($name);
+        $class = $config['use'];
 
         if (preg_match('#^\{(.*)\}$#', $class, $match)) {
             $service = $this->get($match[1]);
 
-            if (isset($this->config[$name]['selects'])) {
+            if (isset($config['selects'])) {
                 $reflection = new ReflectionClass(get_class($service));
 
-                foreach ($this->config[$name]['selects'] as $select) {
+                foreach ($config['selects'] as $select) {
                     $args = $this->autoWireMethod($name, $reflection->getMethod($select['method']), $select);
                     $service = call_user_func_array([&$service, $select['method']], $args);
                 }
@@ -283,6 +276,10 @@ class Container implements ContainerInterface
 
         $this->service[$name] = $service;
 
+        if (isset($this->children[$name])) {
+            $this->children[$name]->setParentService($service);
+        }
+
         return $service;
     }
 
@@ -300,12 +297,13 @@ class Container implements ContainerInterface
     {
         $instance = $class->newInstanceArgs($arguments);
         $this->storeService($name, $config, $instance);
+        $config = $this->config->get($name);
 
-        if (!isset($this->config[$name]['calls'])) {
+        if (!isset($config['calls'])) {
             return $instance;
         }
 
-        foreach ($this->config[$name]['calls'] as $call) {
+        foreach ($config['calls'] as $call) {
             if (!isset($call['method'])) {
                 throw new Exception\InvalidConfiguration('method is required for setter injection in service '.$name);
             }
@@ -382,26 +380,13 @@ class Container implements ContainerInterface
 
             return $param;
         }
+
         if (is_string($param)) {
-            if ($found = preg_match_all('#\{ENV\(([A-Za-z0-9_]+)(?:(,?)([^}]*))\)\}#', $param, $matches)) {
-                if (4 !== count($matches)) {
-                    return $param;
-                }
+            $param = $this->config->getEnv($param);
 
-                for ($i = 0; $i < 1; ++$i) {
-                    $env = getenv($matches[1][$i]);
-                    if (false === $env && !empty($matches[3][$i])) {
-                        $param = str_replace($matches[0][$i], $matches[3][$i], $param);
-                    } elseif (false === $env) {
-                        throw new Exception\EnvVariableNotFound('env variable '.$matches[1][$i].' required but it is neither set not a default value exists');
-                    } else {
-                        $param = str_replace($matches[0][$i], $env, $param);
-                    }
-                }
-
-                return $param;
+            if (preg_match('#^\{\{(.*)\}\}$#', $param, $matches)) {
+                return '{'.$matches[1].'}';
             }
-
             if (preg_match('#^\{(.*)\}$#', $param, $matches)) {
                 return $this->findService($name, $matches[1]);
             }
@@ -424,8 +409,9 @@ class Container implements ContainerInterface
             return $this->children[$current_service]->get($service);
         }
 
-        if (isset($this->config[$current_service]['services'])) {
-            $this->children[$current_service] = new self($this->config[$current_service]['services'], $this);
+        $config = $this->config->get($current_service);
+        if (isset($config['services'])) {
+            $this->children[$current_service] = new self($config['services'], $this);
 
             return $this->children[$current_service]->get($service);
         }
