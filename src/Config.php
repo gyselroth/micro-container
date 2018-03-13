@@ -11,6 +11,8 @@ declare(strict_types=1);
 
 namespace Micro\Container;
 
+use Psr\Container\ContainerInterface;
+
 class Config
 {
     /**
@@ -28,13 +30,31 @@ class Config
     protected $compiled = [];
 
     /**
+     * Container.
+     *
+     * @var ContainerInterface
+     */
+    protected $container;
+
+    /**
      * Create container.
      *
      * @param iterable $config
      */
-    public function __construct(Iterable $config = [])
+    public function __construct(Iterable $config, ContainerInterface $container)
     {
         $this->config = $config;
+        $this->container = $container;
+    }
+
+    /**
+     * Get config.
+     *
+     * @return iterable
+     */
+    public function getConfig(): Iterable
+    {
+        return $this->config;
     }
 
     /**
@@ -159,21 +179,44 @@ class Config
      */
     protected function mergeServiceConfig(string $name, string $class, array $config): array
     {
-        if (!class_exists($class)) {
+        if (!class_exists($class) && !interface_exists($class)) {
             return $config;
         }
 
+        if (isset($this->config[$name]['merge']) && $this->config[$name]['merge'] === false) {
+            return $this->config[$name];
+        }
+
+        $tree = $this->getConfigTree();
         $parents = array_merge(class_implements($class), class_parents($class));
-        foreach ($parents as $parent) {
-            if (isset($this->config[$parent])) {
-                $config = array_merge($config, $this->config[$parent]);
+        foreach ($tree as $parent_config) {
+            foreach ($parents as $parent) {
+                if (isset($parent_config[$parent])) {
+                    $config = array_replace_recursive($config, $parent_config[$parent]);
+                }
+            }
+
+            if (isset($parent_config[$name])) {
+                $config = array_replace_recursive($config, $parent_config[$name]);
             }
         }
 
-        if (isset($this->config[$name])) {
-            $config = array_merge($config, $this->config[$name]);
+        return $config;
+    }
+
+    /**
+     * Get config tree.
+     *
+     * @return array
+     */
+    protected function getConfigTree(): array
+    {
+        $tree = [$this->getConfig()];
+        $parent = $this->container;
+        while ($parent = $parent->getParent()) {
+            $tree[] = $parent->getConfig()->getConfig();
         }
 
-        return $config;
+        return $tree;
     }
 }

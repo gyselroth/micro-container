@@ -68,7 +68,7 @@ class Container implements ContainerInterface
      */
     public function __construct(Iterable $config = [], ?ContainerInterface $parent = null)
     {
-        $this->config = new Config($config);
+        $this->config = new Config($config, $this);
         $this->parent = $parent;
         $this->service[ContainerInterface::class] = $this;
     }
@@ -116,6 +116,16 @@ class Container implements ContainerInterface
     }
 
     /**
+     * Get parent container.
+     *
+     * @return ContainerInterface
+     */
+    public function getParent(): ?ContainerInterface
+    {
+        return $this->parent;
+    }
+
+    /**
      * Add service.
      *
      * @param string $name
@@ -159,6 +169,16 @@ class Container implements ContainerInterface
         $this->parent_service = $service;
 
         return $this;
+    }
+
+    /**
+     * Get config.
+     *
+     * @return Config
+     */
+    public function getConfig(): Config
+    {
+        return $this->config;
     }
 
     /**
@@ -297,7 +317,7 @@ class Container implements ContainerInterface
     }
 
     /**
-     * Create instance.
+     * Get instance (virtual or real instance).
      *
      * @param string          $name
      * @param ReflectionClass $class
@@ -307,6 +327,49 @@ class Container implements ContainerInterface
      * @return mixed
      */
     protected function createInstance(string $name, ReflectionClass $class, array $arguments, array $config)
+    {
+        if (isset($config['lazy']) && true === $config['lazy']) {
+            return $this->getProxyInstance($name, $class, $arguments, $config);
+        }
+
+        return $this->getRealInstance($name, $class, $arguments, $config);
+    }
+
+    /**
+     * Create proxy instance.
+     *
+     * @param string          $name
+     * @param ReflectionClass $class
+     * @param array           $arguments
+     * @param array           $config
+     *
+     * @return mixed
+     */
+    protected function getProxyInstance(string $name, ReflectionClass $class, array $arguments, array $config)
+    {
+        $factory = new \ProxyManager\Factory\LazyLoadingValueHolderFactory();
+        $that = $this;
+
+        return $factory->createProxy(
+            $class->getName(),
+            function (&$wrappedObject, $proxy, $method, $parameters, &$initializer) use ($that, $name,$class,$arguments,$config) {
+                $wrappedObject = $that->getRealInstance($name, $class, $arguments, $config);
+                $initializer = null;
+            }
+        );
+    }
+
+    /**
+     * Create real instance.
+     *
+     * @param string          $name
+     * @param ReflectionClass $class
+     * @param array           $arguments
+     * @param array           $config
+     *
+     * @return mixed
+     */
+    protected function getRealInstance(string $name, ReflectionClass $class, array $arguments, array $config)
     {
         $instance = $class->newInstanceArgs($arguments);
         $this->storeService($name, $config, $instance);
@@ -397,10 +460,10 @@ class Container implements ContainerInterface
         if (is_string($param)) {
             $param = $this->config->getEnv($param);
 
-            if (preg_match('#^\{\{(.*)\}\}$#', $param, $matches)) {
+            if (preg_match('#^\{\{([^{}]+)\}\}$#', $param, $matches)) {
                 return '{'.$matches[1].'}';
             }
-            if (preg_match('#^\{(.*)\}$#', $param, $matches)) {
+            if (preg_match('#^\{([^{}]+)\}$#', $param, $matches)) {
                 return $this->findService($name, $matches[1]);
             }
 

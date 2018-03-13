@@ -14,6 +14,7 @@ namespace Micro\Container\Testsuite;
 use Micro\Container\Container;
 use Micro\Container\Exception;
 use PHPUnit\Framework\TestCase;
+use ProxyManager\Proxy\ProxyInterface;
 use Psr\Container\ContainerInterface;
 
 class ContainerTest extends TestCase
@@ -327,5 +328,161 @@ class ContainerTest extends TestCase
         $service2 = $container->get(Mock\StringArgumentsImplementation::class);
         $this->assertSame('bar', $service->getFoo());
         $this->assertSame('bar', $service2->getFoo());
+    }
+
+    public function testHasNoParentContainer()
+    {
+        $container = new Container([]);
+        $this->assertSame(null, $container->getParent());
+    }
+
+    public function testParentContainer()
+    {
+        $parent = new Container([]);
+        $container = new Container([], $parent);
+        $this->assertSame($parent, $container->getParent());
+    }
+
+    public function testGetLazyService()
+    {
+        $config = [
+            Mock\StringArguments::class => [
+                'arguments' => [
+                    'foo' => 'bar',
+                ],
+                'lazy' => true,
+            ],
+        ];
+
+        $container = new Container($config);
+        $service = $container->get(Mock\StringArguments::class);
+        $this->assertInstanceOf(ProxyInterface::class, $service);
+    }
+
+    public function testTransformLazyService()
+    {
+        $config = [
+            Mock\StringArguments::class => [
+                'arguments' => [
+                    'foo' => 'bar',
+                ],
+                'lazy' => true,
+            ],
+        ];
+
+        $container = new Container($config);
+        $service = $container->get(Mock\StringArguments::class);
+        $this->assertInstanceOf(ProxyInterface::class, $service);
+        $service = $service->getFoo();
+        $this->assertSame('bar', $service);
+        $this->assertNotInstanceOf(ProxyInterface::class, $service);
+    }
+
+    public function testChildService()
+    {
+        $config = [
+            Mock\ClassDependencyRequiredArguments::class => [
+                'services' => [
+                    Mock\StringArguments::class => [
+                        'arguments' => [
+                            'foo' => 'bar',
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $container = new Container($config);
+        $service = $container->get(Mock\ClassDependencyRequiredArguments::class);
+        $this->assertSame('bar', $service->getFoo());
+        $this->assertNotSame($service->getDependency(), $container->get(Mock\StringArguments::class));
+    }
+
+    public function testConfigServiceMerge()
+    {
+        $config = [
+            Mock\StringArguments::class => [
+                'arguments' => [
+                    'foobar' => 'barfoo',
+                ],
+            ],
+            Mock\StringArgumentsInterface::class => [
+                'arguments' => [
+                    'foo' => 'bar',
+                ],
+            ],
+            Mock\StringArgumentsComplexChild::class => [
+                'arguments' => [
+                    'bar' => 'foo',
+                ],
+            ],
+        ];
+
+        $container = new Container($config);
+        $service = $container->get(Mock\StringArgumentsComplexChild::class);
+        $this->assertSame('bar', $service->getFoo());
+        $this->assertSame('foo', $service->getBar());
+        $this->assertSame('barfoo', $service->getFoobar());
+    }
+
+    public function testConfigGetServiceWithEnv()
+    {
+        putenv('FOO=bar');
+
+        $config = [
+            Mock\StringArguments::class => [
+                'arguments' => [
+                    'foo' => '{ENV(FOO)}',
+                ],
+            ],
+        ];
+
+        $container = new Container($config);
+        $this->assertSame('bar', $container->get(Mock\StringArguments::class)->getFoo());
+    }
+
+    public function testConfigGetServiceWithMultipleEnv()
+    {
+        putenv('FOO=bar');
+        putenv('BAR=foo');
+
+        $config = [
+            Mock\StringArguments::class => [
+                'arguments' => [
+                    'foo' => '{ENV(FOO)}-{ENV(BAR)}',
+                ],
+            ],
+        ];
+
+        $container = new Container($config);
+        $this->assertSame('bar-foo', $container->get(Mock\StringArguments::class)->getFoo());
+    }
+
+    public function testConfigInvalidEnv()
+    {
+        $config = [
+            Mock\StringArguments::class => [
+                'arguments' => [
+                    'foo' => '{ENV(FOO)}',
+                ],
+            ],
+        ];
+
+        $container = new Container($config);
+        $container->get(Mock\StringArguments::class)->getFoo();
+    }
+
+    public function testConfigDefaultEnvValue()
+    {
+        $config = [
+            Mock\StringArguments::class => [
+                'arguments' => [
+                    'foo' => '{ENV(FOO,foobar)}',
+                ],
+            ],
+        ];
+
+        $container = new Container($config);
+        $this->assertSame('foobar', $container->get(Mock\StringArguments::class)->getFoo());
     }
 }

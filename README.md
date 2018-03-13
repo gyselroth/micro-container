@@ -6,6 +6,24 @@
 [![GitHub release](https://img.shields.io/github/release/gyselroth/micro-container.svg)](https://github.com/gyselroth/micro-container/releases)
 [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/gyselroth/micro-container/master/LICENSE)
 
+# Table of Contents
+  * [Description](#Description)
+  * [Requirements](#Requirements)
+  * [Download](#Download)
+  * [Documentation](#Documentation)
+        * [Configuration](#or-using-pathogen)
+        * [Autowiring](#or-using-pathogen)
+        * [Constructor injection](#or-using-pathogen)
+        * [Setter injection](#or-using-pathogen)
+        * [References to other services](#or-using-pathogen)
+        * [Using Interfaces, abstract/parent classes or aliases](#or-using-pathogen)
+        * [Values and environment variables](#or-using-pathogen)
+        * [Singletons](#or-using-pathogen)
+        * [Lazy services](#or-using-pathogen)
+        * [Exposing and nesting services](#or-using-pathogen)
+        * [Configuring services via parent classes or interfaces](#or-using-pathogen)
+        * [Using method result as service](#or-using-pathogen)
+
 ## Description
 This is a lightweight dependency injection container for PHP 7.1+.
 It supports full autowiring and lets you configure the container with whatever config system you want.
@@ -194,7 +212,7 @@ $config = [
 ### Reference to other services
 If you want to pass another service you can wrap your value into `{service name}`. This will let the container to search for a service called 'service name'.
 
-### Interfaces
+### Using Interfaces, abstract/parent classes or aliases
 A service named with an interface name like `Psr\Log\LoggerInterface` can be configured to use specific implementation like `Monolog\Logger` via the 
 keyword `use`.
 
@@ -258,6 +276,29 @@ $b = $container->get(SmtpTransport::class);
 ```
 
 `$a` and `$b` are different instances now. 
+
+### Lazy services
+Lazy services are great if you have very complex objects or just many of them. A service declared as `lazy` will be return as
+a proxy object and as soon as it is really required it gets initiallized. Proxy objects are implemented trough [Ocramius/ProxyManager](https://github.com/Ocramius/ProxyManager).
+
+Let's say there is a PDO service and it is required by lots of other services and it does already connect to the database server within the constructor.
+This is fine but may be not usable if you only rely on the connection at certain points in your app. 
+By declaring it as a lazy service, a proxy object of PDO gets injected into your classes which require a PDO service and as soon as your
+class access the PDO service it gets created as real object.
+
+Example:
+```
+$config = [
+    PDO::class => [
+        'arguments' => [
+            'dsn' => 'mysql:127.0.0.1'
+        ],
+        'lazy' => true
+    ]
+];
+```
+Be careful with lazy services. Only use it if it makes sense.
+
 
 ### Exposing and nesting services
 Services configured at the top level of the configuration are exposed by default. You can nest services via `services` to hide services within the container.
