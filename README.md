@@ -63,7 +63,7 @@ composer require gyselroth/micro-container
 A changelog is available [here](https://github.com/gyselroth/micro-container/blob/master/CHANGELOG.md).
 
 ## Contribute
-We are glad that you would like to contribute to this project. Please follow the given [terms](https://github.com/gyselroth/micro-container/blob/master/CONTRIBUTE.md).
+We are glad that you would like to contribute to this project. Please follow the given [terms](https://github.com/gyselroth/micro-container/blob/master/CONTRIBUTING.md).
 
 ## Documentation
 We all know how a DIC must work so we go directly to a example how to use it with a common dependency such as 
