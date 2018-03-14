@@ -541,4 +541,19 @@ class ContainerTest extends TestCase
         $container = new Container($config);
         $this->assertSame('foo', $container->get(Mock\ClassDependencyRequiredArguments::class));
     }
+
+    public function testServiceUseReference()
+    {
+        $config = [
+            'bar' => [
+                'use' => Mock\StringArguments::class,
+            ],
+            'foo' => [
+                'use' => '{bar}',
+            ],
+        ];
+
+        $container = new Container($config);
+        $this->assertSame($container->get('foo'), $container->get('bar'));
+    }
 }

@@ -161,7 +161,9 @@ class Config
             $class = $config['use'];
         }
 
-        if (preg_match('#^\{(.*)\}$#', $class)) {
+        if (preg_match('#^\{([^{}]+)\}$#', $class)) {
+            $config = array_merge($this->getServiceDefaults(), $config);
+
             return $config;
         }
 

@@ -260,6 +260,7 @@ class Container implements ContainerInterface
     {
         $service = $this->get($reference);
         $reflection = new ReflectionClass(get_class($service));
+        $config = $this->config->get($name);
         $service = $this->prepareService($name, $service, $reflection, $config);
 
         return $service;
@@ -367,7 +368,7 @@ class Container implements ContainerInterface
         }
 
         $this->storeService($name, $config, $service);
-        $config = $this->config->get($name);
+        //$config = $this->config->get($name);
 
         foreach ($config['calls'] as $call) {
             if (!isset($call['method'])) {
