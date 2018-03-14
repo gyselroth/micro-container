@@ -330,7 +330,7 @@ By declaring it as a lazy service, a proxy object of PDO gets injected into your
 class access the PDO service it gets created as real object.
 
 Example:
-```
+```php
 $config = [
     PDO::class => [
         'arguments' => [
