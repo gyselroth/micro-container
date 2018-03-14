@@ -18,7 +18,7 @@ class StringArgumentsComplexChild extends StringArguments implements StringArgum
 
     public function __construct(string $foo = 'foo', string $bar = 'bar', string $foobar = 'foobar')
     {
-        $this->foo = $foo;
+        parent::__construct($foo);
         $this->bar = $bar;
         $this->foobar = $foobar;
     }
