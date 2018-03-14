@@ -179,6 +179,7 @@ class Config
             'merge' => true,
             'singleton' => false,
             'lazy' => false,
+            'calls' => [],
         ];
     }
 

@@ -15,6 +15,7 @@ use Closure;
 use Psr\Container\ContainerInterface;
 use ReflectionClass;
 use ReflectionMethod;
+use ProxyManager\Factory\LazyLoadingValueHolderFactory;
 
 class Container implements ContainerInterface
 {
@@ -82,39 +83,12 @@ class Container implements ContainerInterface
      */
     public function get($name)
     {
-        //$service = $this->resolve($name);
-        /*if (null !== $service) {
-            return $service;
-        }*/
-
         try {
             return $this->resolve($name);
-            //return $this->lookupService($name);
         } catch (Exception\ServiceNotFound $e) {
             return $this->autoWireClass($name);
         }
     }
-
-    /**
-     * Traverse tree up and look for service.
-     *
-     * @param string $name
-     *
-     * @return mixed
-     */
-    /*public function lookupService(string $name)
-    {
-        $service = $this->resolve($name);
-        if (null !== $service) {
-            return $service;
-        }
-
-        if (null !== $this->parent) {
-            return $this->parent->lookupService($name);
-        }
-
-        throw new Exception\ServiceNotFound("service $name was not found in service tree");
-    }*/
 
     /**
      * Get parent container.
@@ -216,7 +190,6 @@ class Container implements ContainerInterface
         }
 
         throw new Exception\ServiceNotFound("service $name was not found in service tree");
-        //return null;
     }
 
     /**
@@ -353,7 +326,7 @@ class Container implements ContainerInterface
      */
     protected function getProxyInstance(string $name, ReflectionClass $class, array $arguments, array $config)
     {
-        $factory = new \ProxyManager\Factory\LazyLoadingValueHolderFactory();
+        $factory = new LazyLoadingValueHolderFactory();
         $that = $this;
 
         return $factory->createProxy(
@@ -380,10 +353,6 @@ class Container implements ContainerInterface
         $instance = $class->newInstanceArgs($arguments);
         $this->storeService($name, $config, $instance);
         $config = $this->config->get($name);
-
-        if (!isset($config['calls'])) {
-            return $instance;
-        }
 
         foreach ($config['calls'] as $call) {
             if (!isset($call['method'])) {
