@@ -489,4 +489,56 @@ class ContainerTest extends TestCase
         $container = new Container($config);
         $this->assertSame('foobar', $container->get(Mock\StringArguments::class)->getFoo());
     }
+
+    public function testArgumentEscaped()
+    {
+        $config = [
+            Mock\StringArguments::class => [
+                'arguments' => [
+                    'foo' => '{{test}}',
+                ],
+            ],
+        ];
+
+        $container = new Container($config);
+        $this->assertSame('{test}', $container->get(Mock\StringArguments::class)->getFoo());
+    }
+
+    public function testServiceWhichUsesMethodResult()
+    {
+        $config = [
+            Mock\StringArguments::class => [
+                'arguments' => [
+                    'foo' => 'bar',
+                ],
+                'selects' => [
+                    [
+                        'method' => 'getFoo',
+                    ],
+                ],
+            ],
+        ];
+
+        $container = new Container($config);
+        $this->assertSame('bar', $container->get(Mock\StringArguments::class));
+    }
+
+    public function testServiceWhichUsesChainedMethodResult()
+    {
+        $config = [
+            Mock\ClassDependencyRequiredArguments::class => [
+                'selects' => [
+                    [
+                        'method' => 'getDependency',
+                    ],
+                    [
+                        'method' => 'getFoo',
+                    ],
+                ],
+            ],
+        ];
+
+        $container = new Container($config);
+        $this->assertSame('foo', $container->get(Mock\ClassDependencyRequiredArguments::class));
+    }
 }

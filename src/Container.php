@@ -12,10 +12,10 @@ declare(strict_types=1);
 namespace Micro\Container;
 
 use Closure;
+use ProxyManager\Factory\LazyLoadingValueHolderFactory;
 use Psr\Container\ContainerInterface;
 use ReflectionClass;
 use ReflectionMethod;
-use ProxyManager\Factory\LazyLoadingValueHolderFactory;
 
 class Container implements ContainerInterface
 {
@@ -226,7 +226,7 @@ class Container implements ContainerInterface
         $config = $this->config->get($name);
         $class = $config['use'];
 
-        if (preg_match('#^\{(.*)\}$#', $class, $match)) {
+        if (preg_match('#^\{([^{}]+)\}$#', $class, $match)) {
             return $this->wireReference($name, $match[1], $config);
         }
 
@@ -259,17 +259,10 @@ class Container implements ContainerInterface
     protected function wireReference(string $name, string $reference, array $config)
     {
         $service = $this->get($reference);
+        $reflection = new ReflectionClass(get_class($service));
+        $service = $this->prepareService($name, $service, $reflection, $config);
 
-        if (isset($config['selects'])) {
-            $reflection = new ReflectionClass(get_class($service));
-
-            foreach ($config['selects'] as $select) {
-                $args = $this->autoWireMethod($name, $reflection->getMethod($select['method']), $select);
-                $service = call_user_func_array([&$service, $select['method']], $args);
-            }
-        }
-
-        return $this->storeService($name, $config, $service);
+        return $service;
     }
 
     /**
@@ -351,7 +344,29 @@ class Container implements ContainerInterface
     protected function getRealInstance(string $name, ReflectionClass $class, array $arguments, array $config)
     {
         $instance = $class->newInstanceArgs($arguments);
-        $this->storeService($name, $config, $instance);
+        $instance = $this->prepareService($name, $instance, $class, $config);
+
+        return $instance;
+    }
+
+    /**
+     * Prepare service (execute sub selects and excute setter injections).
+     *
+     * @param string          $name
+     * @param mixed           $service
+     * @param ReflectionClass $class
+     * @param array           $config
+     *
+     * @return mixed
+     */
+    protected function prepareService(string $name, $service, ReflectionClass $class, array $config)
+    {
+        foreach ($config['selects'] as $select) {
+            $args = $this->autoWireMethod($name, $class->getMethod($select['method']), $select);
+            $service = call_user_func_array([&$service, $select['method']], $args);
+        }
+
+        $this->storeService($name, $config, $service);
         $config = $this->config->get($name);
 
         foreach ($config['calls'] as $call) {
@@ -368,10 +383,10 @@ class Container implements ContainerInterface
             }
 
             $arguments = $this->autoWireMethod($name, $method, $call);
-            call_user_func_array([&$instance, $call['method']], $arguments);
+            call_user_func_array([&$service, $call['method']], $arguments);
         }
 
-        return $instance;
+        return $service;
     }
 
     /**

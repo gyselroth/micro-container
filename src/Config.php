@@ -180,6 +180,7 @@ class Config
             'singleton' => false,
             'lazy' => false,
             'calls' => [],
+            'selects' => [],
         ];
     }
 
