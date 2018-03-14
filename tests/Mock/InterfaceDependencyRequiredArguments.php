@@ -3,9 +3,9 @@
 declare(strict_types=1);
 
 /**
- * Micro
+ * Micro\Container
  *
- * @copyright   Copryright (c) 2015-2018 gyselroth GmbH (https://gyselroth.com)
+ * @copyright   Copryright (c) 2018 gyselroth GmbH (https://gyselroth.com)
  * @license     MIT https://opensource.org/licenses/MIT
  */
 

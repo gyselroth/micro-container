@@ -3,9 +3,9 @@
 declare(strict_types=1);
 
 /**
- * Micro
+ * Micro\Container
  *
- * @copyright   Copryright (c) 2015-2018 gyselroth GmbH (https://gyselroth.com)
+ * @copyright   Copryright (c) 2018 gyselroth GmbH (https://gyselroth.com)
  * @license     MIT https://opensource.org/licenses/MIT
  */
 
@@ -82,13 +82,14 @@ class Container implements ContainerInterface
      */
     public function get($name)
     {
-        $service = $this->resolve($name);
-        if (null !== $service) {
+        //$service = $this->resolve($name);
+        /*if (null !== $service) {
             return $service;
-        }
+        }*/
 
         try {
-            return $this->lookupService($name);
+            return $this->resolve($name);
+            //return $this->lookupService($name);
         } catch (Exception\ServiceNotFound $e) {
             return $this->autoWireClass($name);
         }
@@ -101,7 +102,7 @@ class Container implements ContainerInterface
      *
      * @return mixed
      */
-    public function lookupService(string $name)
+    /*public function lookupService(string $name)
     {
         $service = $this->resolve($name);
         if (null !== $service) {
@@ -113,7 +114,7 @@ class Container implements ContainerInterface
         }
 
         throw new Exception\ServiceNotFound("service $name was not found in service tree");
-    }
+    }*/
 
     /**
      * Get parent container.
@@ -188,7 +189,7 @@ class Container implements ContainerInterface
      *
      * @return mixed
      */
-    protected function resolve(string $name)
+    public function resolve(string $name)
     {
         if ($this->has($name)) {
             return $this->service[$name];
@@ -210,7 +211,12 @@ class Container implements ContainerInterface
             }
         }
 
-        return null;
+        if (null !== $this->parent) {
+            return $this->parent->lookupService($name);
+        }
+
+        throw new Exception\ServiceNotFound("service $name was not found in service tree");
+        //return null;
     }
 
     /**
@@ -304,7 +310,7 @@ class Container implements ContainerInterface
      */
     protected function storeService(string $name, array $config, $service)
     {
-        if (isset($config['singleton']) && true === $config['singleton']) {
+        if (true === $config['singleton']) {
             return $service;
         }
         $this->service[$name] = $service;
@@ -328,7 +334,7 @@ class Container implements ContainerInterface
      */
     protected function createInstance(string $name, ReflectionClass $class, array $arguments, array $config)
     {
-        if (isset($config['lazy']) && true === $config['lazy']) {
+        if (true === $config['lazy']) {
             return $this->getProxyInstance($name, $class, $arguments, $config);
         }
 

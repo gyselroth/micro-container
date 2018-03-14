@@ -3,9 +3,9 @@
 declare(strict_types=1);
 
 /**
- * Micro
+ * Micro\Container
  *
- * @copyright   Copryright (c) 2015-2018 gyselroth GmbH (https://gyselroth.com)
+ * @copyright   Copryright (c) 2018 gyselroth GmbH (https://gyselroth.com)
  * @license     MIT https://opensource.org/licenses/MIT
  */
 
@@ -106,7 +106,7 @@ class Config
                 return $param;
             }
 
-            for ($i = 0; $i < 1; ++$i) {
+            for ($i = 0; $i < count($matches[0]); ++$i) {
                 $param = $this->parseEnv($param, $matches, $i);
             }
 
@@ -169,6 +169,20 @@ class Config
     }
 
     /**
+     * Get service defaults.
+     *
+     * @return array
+     */
+    protected function getServiceDefaults(): array
+    {
+        return [
+            'merge' => true,
+            'singleton' => false,
+            'lazy' => false,
+        ];
+    }
+
+    /**
      * Find parent classes or interfaces and merge service configurations.
      *
      * @param string $name
@@ -179,11 +193,13 @@ class Config
      */
     protected function mergeServiceConfig(string $name, string $class, array $config): array
     {
+        $config = array_merge($this->getServiceDefaults(), $config);
+
         if (!class_exists($class) && !interface_exists($class)) {
             return $config;
         }
 
-        if (isset($this->config[$name]['merge']) && $this->config[$name]['merge'] === false) {
+        if (false === $config['merge']) {
             return $this->config[$name];
         }
 

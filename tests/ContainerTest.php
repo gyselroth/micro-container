@@ -3,9 +3,9 @@
 declare(strict_types=1);
 
 /**
- * Micro
+ * Micro\Container
  *
- * @copyright   Copryright (c) 2015-2018 gyselroth GmbH (https://gyselroth.com)
+ * @copyright   Copryright (c) 2018 gyselroth GmbH (https://gyselroth.com)
  * @license     MIT https://opensource.org/licenses/MIT
  */
 
@@ -456,10 +456,14 @@ class ContainerTest extends TestCase
 
         $container = new Container($config);
         $this->assertSame('bar-foo', $container->get(Mock\StringArguments::class)->getFoo());
+
+        putenv('FOO');
+        putenv('BAR');
     }
 
     public function testConfigInvalidEnv()
     {
+        $this->expectException(Exception\EnvVariableNotFound::class);
         $config = [
             Mock\StringArguments::class => [
                 'arguments' => [

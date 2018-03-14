@@ -7,31 +7,49 @@
 [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/gyselroth/micro-container/master/LICENSE)
 
 # Table of Contents
-  * [Description](#Description)
-  * [Requirements](#Requirements)
-  * [Download](#Download)
-  * [Documentation](#Documentation)
-        * [Configuration](#or-using-pathogen)
-        * [Autowiring](#or-using-pathogen)
-        * [Constructor injection](#or-using-pathogen)
-        * [Setter injection](#or-using-pathogen)
-        * [References to other services](#or-using-pathogen)
-        * [Using Interfaces, abstract/parent classes or aliases](#or-using-pathogen)
-        * [Values and environment variables](#or-using-pathogen)
-        * [Singletons](#or-using-pathogen)
-        * [Lazy services](#or-using-pathogen)
-        * [Exposing and nesting services](#or-using-pathogen)
-        * [Configuring services via parent classes or interfaces](#or-using-pathogen)
-        * [Using method result as service](#or-using-pathogen)
+  * [Description](#description)
+  * [Features](#features)
+  * [Requirements](#requirements)
+  * [Download](#download)
+  * [Changelog](#changelog)
+  * [Contribute](#contribute)
+  * [Documentation](#documentation)
+        * [Configuration](#configuration)
+        * [Retrieving services](#retrieving-services)
+        * [Adding services on the fly](#adding-services-on-the-fly)
+        * [Autowiring](#autowiring)
+        * [Constructor injection](#constructor-injection)
+        * [Setter injection](#setter-injection)
+        * [References to other services](#references-to-other-services)
+        * [Using Interfaces, abstract/parent classes or aliases](#using-interfces,-abstract/parent-classes-or-aliases)
+        * [Values and environment variables](#values-and-environment-variables)
+        * [Singletons](#singletons)
+        * [Lazy services](#lazy-services)
+        * [Exposing and nesting services](#exposing-and-nesting-services)
+        * [Configuring services via parent classes or interfaces](#configurung-services-via-parent-classes-or-interfaces)
+        * [Using method result as service](#using-method-result-as-service)
 
 ## Description
 This is a lightweight dependency injection container for PHP 7.1+.
-It supports full autowiring and lets you configure the container with whatever config system you want.
-Since it does build everything on the fly (No worries reflection is cached by PHP itself) it is super fast compared to other DIC.
-Of course its features are limited compared to a DIC like Symfony or PHP-DI but it will fit for most projects and the configuration is simpler and feels more lightweight.
+It supports full autowiring and lets you configure the container with whatever config system you want. It is completely configurable via a simple array.
+Since it does build everything on the fly (No worries reflection is cached by PHP itself) it is super fast and easy to use.
+Of course its features are limited compared to a DIC like Symfony or PHP-DI but it will fit for most projects and the configuration is simpler and feels more lightweight,
+however it still supports the most common needed features and combines that in a library as lightweight as possible.
+
+## Features
+
+* PSR-11 compatible DIC
+* Full inbuilt autowiring
+* Configurable via a (simple) array
+* Setter/Constructor injection
+* Env variables
+* Lazy loading
+* Singletons
+* Configuration of multiple services via interface/parent class declarations
+* Full performance of PHP 7.x
 
 ## Requirements
-The library is only >= PHP7.1 compatible.
+The library is only >= PHP 7.1 compatible.
 
 ## Download
 The package is available at packagist: https://packagist.org/packages/gyselroth/micro-container
@@ -40,6 +58,12 @@ To install the package via composer execute:
 ```
 composer require gyselroth/micro-container
 ```
+
+## Changelog
+A changelog is available [here](https://github.com/gyselroth/micro-container/CHANGELOG.md).
+
+## Contribute
+We are glad that you would like to contribute to this project. Please follow the given [terms](https://github.com/gyselroth/micro-container/CONTRIBUTE.md).
 
 ## Documentation
 We all know how a DIC must work so we go directly to a example how to use it with a common dependency such as 
@@ -132,10 +156,29 @@ $config = new Config($path);
 $container = new Container($config);
 ```
 
+## Retrieving services
+Retrieve as service from the container is an easy task, let us
+request the logger:
+
+```php
+$container = new Container();
+$container->get(LoggerInterface::class)->info('Hello world');
+```
+
+## Adding services on the fly
+You may want to add an existing service on the fly instead declaring it:
+
+```php
+$container = new Container();
+$service = new MyExampleService();
+$container->add('MyService', $service);
+```
+
 ### Autowiring
 This container does autowiring by default. You do not need to configure anything for it.
 Also it is not required that you configure a service explicitly which is requested by a dependency. 
 If it is not configured but can be resolved anyway you're good to go.
+The container tries to resolve everything possible automatically. You only need to configure what is really required.
 
 ### Constructor injection
 You can pass constructor arguments via the keyword `arguments`. **Attention**: The container is based on named arguments.
@@ -306,6 +349,7 @@ This leads to a cleaner and more readable configuration. Given the Monolog examp
 Therefore those can be requested directly from the container whereas `Monolog\Handler\StreamHandler` is a sub service of `Psr\Log\LoggerInterface` and can not be requested.
 The container tries to look up services from the bottom to the top. If there is service configured with the name the container is looking for it takes that configuration and injects the service at this level.
 If no service is found the container will look a level above and so on.
+You can nest service as deep as you want.
 
 Example:
 ```php
@@ -334,7 +378,8 @@ In the above example the service `StreamHandler::class` is a sub service of `Log
 
 ### Configuring services via parent classes or interfaces
 It is also possible to configure services of the same type with one decleration.
-All declerations get merged during requesting a service.
+Of the same type means what parent classes or interfaces a certain class implements.
+All service declerations get merged during requesting a service.
 
 Example:
 ```php
@@ -362,6 +407,47 @@ All implementations of `JobInterface::class` are now singletons and have a const
 expect `Job\C::class` which is also a singleton but the constructor argument `bar` is set too bar.
 
 This also works for nested services and the whole sub service tree get merged with declerations of the same type.
+For example a sub service checks parent service declarations of the same and will merge those.
+
+Let's say we have a job manager and a job class which implements the interface JobInterface:
+
+Example:
+```php
+$config = [
+    JobInterface::class => [
+        'arguments' => [
+            'bar' => 'foo'
+        ],
+    ],
+    JobManager::class => [
+        'arguments' => [
+            'bar' => 'bar'
+        ],
+        'calls' => [
+            [
+                'method' => 'injectJob',
+                'arguments' => ['job' => '{my_job}']
+            ],
+        ],
+        'services' => [
+            'my_job' => [
+                'use' => Job::class
+            ]
+        ]
+    ]
+];
+
+$container = new Container($config);
+$container->get(JobManager::class);
+```
+
+The job `my_job` will get injected into the job manager with the constructor argument `bar => foo` since
+we declared a common service configuration for `JobInterface::class`.
+You may also declare JobInterface::class on the same nesting level as the job itself or as a child service.
+
+If you do not want that a service looks for parent services of the same type and tries to merge the service configuration you 
+can disable this feature by setting `merge` to `false` on the given service.
+
 
 ### Using method result as service
 It is possible to define a service which does use the result of a method call of another service. Have a look at this example where we need 
@@ -385,7 +471,7 @@ $config = [
         'selects' => [[
             'method' => 'selectDatabase',
             'arguments' => [
-                'databaseName' => 'balloon'
+                'databaseName' => 'my_database'
             ]
         ]]
     ]

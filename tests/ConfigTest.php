@@ -3,9 +3,9 @@
 declare(strict_types=1);
 
 /**
- * Micro
+ * Micro\Container
  *
- * @copyright   Copryright (c) 2015-2018 gyselroth GmbH (https://gyselroth.com)
+ * @copyright   Copryright (c) 2018 gyselroth GmbH (https://gyselroth.com)
  * @license     MIT https://opensource.org/licenses/MIT
  */
 
@@ -42,7 +42,20 @@ class ConfigTest extends TestCase
         ];
 
         $instance = new Config($config, new Container());
-        $this->assertSame($config, $instance->get(Mock\StringArguments::class));
+        $this->assertSame($config[Mock\StringArguments::class]['arguments'], $instance->get(Mock\StringArguments::class)['arguments']);
+    }
+
+    public function testConfigGetDefaults()
+    {
+        $config = [
+            Mock\StringArguments::class => [],
+        ];
+
+        $instance = new Config($config, new Container());
+        $service = $instance->get(Mock\StringArguments::class);
+        $this->assertTrue($service['merge']);
+        $this->assertFalse($service['singleton']);
+        $this->assertFalse($service['lazy']);
     }
 
     public function testConfigServiceMerge()
@@ -70,6 +83,27 @@ class ConfigTest extends TestCase
         $this->assertSame('bar', $service['arguments']['foo']);
         $this->assertSame('foo', $service['arguments']['bar']);
         $this->assertSame('barfoo', $service['arguments']['foobar']);
+    }
+
+    public function testConfigServiceMergeDisabled()
+    {
+        $config = [
+            Mock\StringArgumentsInterface::class => [
+                'arguments' => [
+                    'bar' => 'foobar',
+                ],
+            ],
+            Mock\StringArgumentsComplexChild::class => [
+                'arguments' => [
+                    'bar' => 'foo',
+                ],
+                'merge' => false,
+            ],
+        ];
+
+        $instance = new Config($config, new Container());
+        $service = $instance->get(Mock\StringArgumentsComplexChild::class);
+        $this->assertSame('foo', $service['arguments']['bar']);
     }
 
     public function testConfigGetEnv()
