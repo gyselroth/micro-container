@@ -6,6 +6,13 @@
 [![GitHub release](https://img.shields.io/github/release/gyselroth/micro-container.svg)](https://github.com/gyselroth/micro-container/releases)
 [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/gyselroth/micro-container/master/LICENSE)
 
+## Description
+This is a lightweight dependency injection container for PHP 7.1+.
+It supports full autowiring and lets you configure the container with whatever config system you want. It is completely configurable via a simple array.
+Since it does build everything on the fly (No worries reflection is cached by PHP itself) it is super fast and easy to use.
+Of course its features are limited compared to a DIC like Symfony or PHP-DI but it will fit for most projects and the configuration is simpler and feels more lightweight,
+however it still supports the most common needed features and combines that in a library as lightweight as possible.
+
 # Table of Contents
   * [Description](#description)
   * [Features](#features)
@@ -28,13 +35,6 @@
     * [Exposing and nesting services](#exposing-and-nesting-services)
     * [Configuring services via parent classes or interfaces](#configurung-services-via-parent-classes-or-interfaces)
     * [Using method result as service](#using-method-result-as-service)
-
-## Description
-This is a lightweight dependency injection container for PHP 7.1+.
-It supports full autowiring and lets you configure the container with whatever config system you want. It is completely configurable via a simple array.
-Since it does build everything on the fly (No worries reflection is cached by PHP itself) it is super fast and easy to use.
-Of course its features are limited compared to a DIC like Symfony or PHP-DI but it will fit for most projects and the configuration is simpler and feels more lightweight,
-however it still supports the most common needed features and combines that in a library as lightweight as possible.
 
 ## Features
 
@@ -60,10 +60,10 @@ composer require gyselroth/micro-container
 ```
 
 ## Changelog
-A changelog is available [here](https://github.com/gyselroth/micro-container/CHANGELOG.md).
+A changelog is available [here](https://github.com/gyselroth/micro-container/blob/master/CHANGELOG.md).
 
 ## Contribute
-We are glad that you would like to contribute to this project. Please follow the given [terms](https://github.com/gyselroth/micro-container/CONTRIBUTE.md).
+We are glad that you would like to contribute to this project. Please follow the given [terms](https://github.com/gyselroth/micro-container/blob/master/CONTRIBUTE.md).
 
 ## Documentation
 We all know how a DIC must work so we go directly to a example how to use it with a common dependency such as 
