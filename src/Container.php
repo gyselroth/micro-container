@@ -186,7 +186,7 @@ class Container implements ContainerInterface
         }
 
         if (null !== $this->parent) {
-            return $this->parent->lookupService($name);
+            return $this->parent->resolve($name);
         }
 
         throw new Exception\ServiceNotFound("service $name was not found in service tree");
