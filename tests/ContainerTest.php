@@ -47,7 +47,7 @@ class ContainerTest extends TestCase
 
     public function testGetNonExistNamed()
     {
-        $this->expectException(Exception\ServiceNotFound::class);
+        $this->expectException(Exception\InvalidConfiguration::class);
         $container = new Container();
         $container->get('test');
     }

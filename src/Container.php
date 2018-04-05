@@ -368,9 +368,12 @@ class Container implements ContainerInterface
         }
 
         $this->storeService($name, $config, $service);
-        //$config = $this->config->get($name);
 
         foreach ($config['calls'] as $call) {
+            if (null === $call) {
+                continue;
+            }
+
             if (!isset($call['method'])) {
                 throw new Exception\InvalidConfiguration('method is required for setter injection in service '.$name);
             }
@@ -417,7 +420,15 @@ class Container implements ContainerInterface
                     throw new Exception\InvalidConfiguration('class '.$type_class.' can not depend on itself');
                 }
 
-                $args[$param_name] = $this->findService($name, $type_class);
+                try {
+                    $args[$param_name] = $this->findService($name, $type_class);
+                } catch (\Exception $e) {
+                    if ($param->isDefaultValueAvailable() && null === $param->getDefaultValue()) {
+                        $args[$param_name] = null;
+                    } else {
+                        throw $e;
+                    }
+                }
             } elseif ($param->isDefaultValueAvailable()) {
                 $args[$param_name] = $param->getDefaultValue();
             } elseif ($param->allowsNull() && $param->hasType()) {

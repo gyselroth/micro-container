@@ -1,3 +1,11 @@
+## 1.0.1
+**Maintainer**: Raffael Sahli <sahli@gyselroth.com>\
+**Date**: Wed Mar 14 10:39:05 CET 2018
+
+* [FIX] fixed undefined index lazy if merge is set to false, (correctly merge service definition with defaults)
+* [FIX] if service class is not resolvable or an interface an exception of type Exception\InvalidConfiguration gets thrown instead a php internal error that a interface can not be used as a class
+* [FIX] now sets argument to null if it is typehinted and has a default value of null (instead the php 7.1 ?Typehint declaration) 
+
 ## 1.0.0
 **Maintainer**: Raffael Sahli <sahli@gyselroth.com>\
 **Date**: Wed Mar 14 10:39:05 CET 2018
