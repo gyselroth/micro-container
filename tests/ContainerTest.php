@@ -73,6 +73,29 @@ class ContainerTest extends TestCase
         $this->assertSame('bar', $service->getFoo());
     }
 
+    public function testSetArrayOfArguments()
+    {
+        $config = [
+            Mock\StringArgumentsComplex::class => [
+                'calls' => [[
+                    'method' => 'setFooBar',
+                    'arguments' => [
+                        'foobar' => [
+                            'foo' => 'foo',
+                            'bar' => 'foo'
+                        ]
+                    ]
+                ]],
+            ],
+        ];
+
+        $container = new Container($config);
+        $service = $container->get(Mock\StringArgumentsComplex::class);
+        $this->assertSame('foo', $service->getBar());
+        $this->assertSame('foo', $service->getFoo());
+    }
+
+
     public function testAddWithConstructorArgumentsOnlySetOneArgument()
     {
         $config = [
@@ -110,6 +133,23 @@ class ContainerTest extends TestCase
         $container = new Container($config);
         $service = $container->get(Mock\StringArguments::class);
         $this->assertSame('foo', $service->getFoo());
+    }
+
+    public function testSetterBoolInjectionAllowedNullValue()
+    {
+        $config = [
+            Mock\StringArguments::class => [
+                'calls' => [
+                    [
+                        'method' => 'setBar',
+                    ],
+                ],
+            ],
+        ];
+
+        $container = new Container($config);
+        $service = $container->get(Mock\StringArguments::class);
+        $this->assertSame(null, $service->getBar());
     }
 
     public function testAddWithConstructorArgumentsAndCallSetOneArgument()
@@ -181,6 +221,33 @@ class ContainerTest extends TestCase
         $container = new Container($config);
         $service = $container->get(Mock\ClassDependencyRequiredArguments::class);
         $this->assertSame('bar', $service->getFoo());
+    }
+
+    public function testGetServiceWithOptionalNotExistingClassDependency()
+    {
+        $config = [
+            Mock\StringArguments::class => [
+                'use' => 'foo'
+            ],
+        ];
+
+        $container = new Container($config);
+        $service = $container->get(Mock\ClassDependencyOptionalArguments::class);
+        $this->assertSame(null, $service->getDependency());
+    }
+
+    public function testGetServiceWithRequiredNotExistingClassDependency()
+    {
+        $this->expectException(Exception\InvalidConfiguration::class);
+
+        $config = [
+            Mock\StringArguments::class => [
+                'use' => 'foo'
+            ],
+        ];
+
+        $container = new Container($config);
+        $service = $container->get(Mock\ClassDependencyRequiredArguments::class);
     }
 
     public function testGetServiceWithRequiredInterfaceDependency()
@@ -398,6 +465,35 @@ class ContainerTest extends TestCase
         $this->assertNotSame($service->getDependency(), $container->get(Mock\StringArguments::class));
     }
 
+    public function testChildServiceUsingParentService()
+    {
+        $config = [
+            Mock\StringArguments::class => [
+                'arguments' => [
+                    'foo' => 'bar'
+                ]
+            ],
+            Mock\ClassDependencyRequiredArguments::class => [
+                'calls' => [
+                    [
+                        'method' => 'setBar'
+                    ]
+                ],
+                'services' => [
+                    Mock\ClassDependencyOptionalArguments::class => [
+                        'calls' => [[
+                            'method' => 'setFoo',
+                        ]],
+                    ],
+                ],
+            ],
+        ];
+
+        $container = new Container($config);
+        $service = $container->get(Mock\ClassDependencyRequiredArguments::class);
+        $this->assertSame('bar', $service->getBar()->getFoo());
+    }
+
     public function testConfigServiceMerge()
     {
         $config = [
@@ -423,6 +519,27 @@ class ContainerTest extends TestCase
         $this->assertSame('bar', $service->getFoo());
         $this->assertSame('foo', $service->getBar());
         $this->assertSame('barfoo', $service->getFoobar());
+    }
+
+    public function testConfigServiceMergeDisabled()
+    {
+        $config = [
+            Mock\StringArgumentsInterface::class => [
+                'arguments' => [
+                    'bar' => 'foo',
+                ],
+            ],
+            Mock\StringArgumentsComplexChild::class => [
+                'merge' => false,
+                'arguments' => [
+                    'foo' => 'bar',
+                ],
+            ],
+        ];
+
+        $container = new Container($config);
+        $service = $container->get(Mock\StringArgumentsComplexChild::class);
+        $this->assertSame('bar', $service->getBar());
     }
 
     public function testConfigGetServiceWithEnv()
@@ -488,6 +605,26 @@ class ContainerTest extends TestCase
 
         $container = new Container($config);
         $this->assertSame('foobar', $container->get(Mock\StringArguments::class)->getFoo());
+    }
+
+    public function testServiceReferenceArgument()
+    {
+        $config = [
+            'bar' => [
+                'use' => Mock\StringArguments::class,
+                'arguments' => [
+                    'foo' => 'bar'
+                ]
+            ],
+            Mock\ClassDependencyRequiredArguments::class => [
+                'arguments' => [
+                    'foo' => '{bar}',
+                ],
+            ],
+        ];
+
+        $container = new Container($config);
+        $this->assertSame('bar', $container->get(Mock\ClassDependencyRequiredArguments::class)->getFoo());
     }
 
     public function testArgumentEscaped()

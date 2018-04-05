@@ -11,33 +11,27 @@ declare(strict_types=1);
 
 namespace Micro\Container\Testsuite\Mock;
 
-class StringArguments
+class ClassDependencyOptionalArguments
 {
     protected $foo;
-    protected $bar;
 
-    public function __construct(string $foo = 'foo')
+    public function __construct(StringArguments $foo=null)
     {
         $this->foo = $foo;
     }
 
-    public function getFoo(): string
+    public function setFoo(StringArguments $foo)
+    {
+        $this->foo = $foo;
+    }
+
+    public function getDependency(): ?StringArguments
     {
         return $this->foo;
     }
 
-    public function setFoo(string $foo)
+    public function getFoo(): string
     {
-        $this->foo = $foo;
-    }
-
-    public function setBar(?string $bar)
-    {
-        $this->bar = $bar;
-    }
-
-    public function getBar()
-    {
-        return $this->bar;
+        return $this->foo->getFoo();
     }
 }

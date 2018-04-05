@@ -14,6 +14,7 @@ namespace Micro\Container\Testsuite\Mock;
 class ClassDependencyRequiredArguments
 {
     protected $foo;
+    protected $bar;
 
     public function __construct(StringArguments $foo)
     {
@@ -28,5 +29,15 @@ class ClassDependencyRequiredArguments
     public function getFoo(): string
     {
         return $this->foo->getFoo();
+    }
+
+    public function setBar(ClassDependencyOptionalArguments $bar)
+    {
+        $this->bar = $bar;
+    }
+
+    public function getBar()
+    {
+        return $this->bar;
     }
 }
