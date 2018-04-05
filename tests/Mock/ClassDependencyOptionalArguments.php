@@ -15,7 +15,7 @@ class ClassDependencyOptionalArguments
 {
     protected $foo;
 
-    public function __construct(StringArguments $foo=null)
+    public function __construct(StringArguments $foo = null)
     {
         $this->foo = $foo;
     }

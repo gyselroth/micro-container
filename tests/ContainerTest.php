@@ -82,9 +82,9 @@ class ContainerTest extends TestCase
                     'arguments' => [
                         'foobar' => [
                             'foo' => 'foo',
-                            'bar' => 'foo'
-                        ]
-                    ]
+                            'bar' => 'foo',
+                        ],
+                    ],
                 ]],
             ],
         ];
@@ -94,7 +94,6 @@ class ContainerTest extends TestCase
         $this->assertSame('foo', $service->getBar());
         $this->assertSame('foo', $service->getFoo());
     }
-
 
     public function testAddWithConstructorArgumentsOnlySetOneArgument()
     {
@@ -227,7 +226,7 @@ class ContainerTest extends TestCase
     {
         $config = [
             Mock\StringArguments::class => [
-                'use' => 'foo'
+                'use' => 'foo',
             ],
         ];
 
@@ -242,7 +241,7 @@ class ContainerTest extends TestCase
 
         $config = [
             Mock\StringArguments::class => [
-                'use' => 'foo'
+                'use' => 'foo',
             ],
         ];
 
@@ -470,14 +469,14 @@ class ContainerTest extends TestCase
         $config = [
             Mock\StringArguments::class => [
                 'arguments' => [
-                    'foo' => 'bar'
-                ]
+                    'foo' => 'bar',
+                ],
             ],
             Mock\ClassDependencyRequiredArguments::class => [
                 'calls' => [
                     [
-                        'method' => 'setBar'
-                    ]
+                        'method' => 'setBar',
+                    ],
                 ],
                 'services' => [
                     Mock\ClassDependencyOptionalArguments::class => [
@@ -613,8 +612,8 @@ class ContainerTest extends TestCase
             'bar' => [
                 'use' => Mock\StringArguments::class,
                 'arguments' => [
-                    'foo' => 'bar'
-                ]
+                    'foo' => 'bar',
+                ],
             ],
             Mock\ClassDependencyRequiredArguments::class => [
                 'arguments' => [
