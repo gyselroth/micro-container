@@ -274,4 +274,60 @@ class Container extends AbstractContainer
 
         return $args;
     }
+
+    /**
+     * Parse param value.
+     *
+     * @param mixed  $param
+     * @param string $name
+     *
+     * @return mixed
+     */
+    protected function parseParam($param, string $name)
+    {
+        if (is_iterable($param)) {
+            foreach ($param as $key => $value) {
+                $param[$key] = $this->parseParam($value, $name);
+            }
+
+            return $param;
+        }
+
+        if (is_string($param)) {
+            $param = $this->config->getEnv($param);
+
+            if (preg_match('#^\{\{([^{}]+)\}\}$#', $param, $matches)) {
+                return '{'.$matches[1].'}';
+            }
+            if (preg_match('#^\{([^{}]+)\}$#', $param, $matches)) {
+                return $this->findService($name, $matches[1]);
+            }
+
+            return $param;
+        }
+
+        return $param;
+    }
+
+    /**
+     * Locate service.
+     *
+     * @param string $current_service
+     * @param string $service
+     */
+    protected function findService(string $current_service, string $service)
+    {
+        if (isset($this->children[$current_service])) {
+            return $this->children[$current_service]->get($service);
+        }
+
+        $config = $this->config->get($current_service);
+        if (isset($config['services'])) {
+            $this->children[$current_service] = new self($config['services'], $this);
+
+            return $this->children[$current_service]->get($service);
+        }
+
+        return $this->get($service);
+    }
 }
