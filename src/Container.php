@@ -263,11 +263,12 @@ class Container extends AbstractContainer
     }
 
     /**
-     * Resolve service argument
+     * Resolve service argument.
      *
-     * @param string $name
-     * @param ReflectionClass $type
+     * @param string              $name
+     * @param ReflectionClass     $type
      * @param ReflectionParameter $param
+     *
      * @return mixed
      */
     protected function resolveServiceArgument(string $name, ReflectionClass $type, ReflectionParameter $param)
@@ -283,9 +284,9 @@ class Container extends AbstractContainer
         } catch (\Exception $e) {
             if ($param->isDefaultValueAvailable() && null === $param->getDefaultValue()) {
                 return null;
-            } else {
-                throw $e;
             }
+
+            throw $e;
         }
     }
 

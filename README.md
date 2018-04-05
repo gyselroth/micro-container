@@ -40,13 +40,12 @@ however it still supports the most common needed features and combines that in a
 
 * PSR-11 compatible DIC
 * Full inbuilt autowiring
-* Configurable via a (simple) array
+* Configurable via native php array (or anything else decoded into an array)
 * Setter/Constructor injection
 * Env variables
 * Lazy loading
 * Singletons
 * Configuration of multiple services via interface/parent class declarations
-* Full performance of PHP 7.x
 
 ## Requirements
 The library is only >= PHP 7.1 compatible.
