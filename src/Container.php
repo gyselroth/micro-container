@@ -14,6 +14,7 @@ namespace Micro\Container;
 use ProxyManager\Factory\LazyLoadingValueHolderFactory;
 use ReflectionClass;
 use ReflectionMethod;
+use ReflectionParameter;
 
 class Container extends AbstractContainer
 {
@@ -248,21 +249,7 @@ class Container extends AbstractContainer
             if (isset($config['arguments'][$param_name])) {
                 $args[$param_name] = $this->parseParam($config['arguments'][$param_name], $name);
             } elseif (null !== $type) {
-                $type_class = $type->getName();
-
-                if ($type_class === $name) {
-                    throw new Exception\InvalidConfiguration('class '.$type_class.' can not depend on itself');
-                }
-
-                try {
-                    $args[$param_name] = $this->findService($name, $type_class);
-                } catch (\Exception $e) {
-                    if ($param->isDefaultValueAvailable() && null === $param->getDefaultValue()) {
-                        $args[$param_name] = null;
-                    } else {
-                        throw $e;
-                    }
-                }
+                $args[$param_name] = $this->resolveServiceArgument($name, $type, $param);
             } elseif ($param->isDefaultValueAvailable()) {
                 $args[$param_name] = $param->getDefaultValue();
             } elseif ($param->allowsNull()) {
@@ -273,6 +260,33 @@ class Container extends AbstractContainer
         }
 
         return $args;
+    }
+
+    /**
+     * Resolve service argument
+     *
+     * @param string $name
+     * @param ReflectionClass $type
+     * @param ReflectionParameter $param
+     * @return mixed
+     */
+    protected function resolveServiceArgument(string $name, ReflectionClass $type, ReflectionParameter $param)
+    {
+        $type_class = $type->getName();
+
+        if ($type_class === $name) {
+            throw new Exception\InvalidConfiguration('class '.$type_class.' can not depend on itself');
+        }
+
+        try {
+            return $this->findService($name, $type_class);
+        } catch (\Exception $e) {
+            if ($param->isDefaultValueAvailable() && null === $param->getDefaultValue()) {
+                return null;
+            } else {
+                throw $e;
+            }
+        }
     }
 
     /**
