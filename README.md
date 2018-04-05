@@ -27,13 +27,13 @@ however it still supports the most common needed features and combines that in a
     * [Autowiring](#autowiring)
     * [Constructor injection](#constructor-injection)
     * [Setter injection](#setter-injection)
-    * [References to other services](#references-to-other-services)
-    * [Using Interfaces, abstract/parent classes or aliases](#using-interfces,-abstract/parent-classes-or-aliases)
+    * [Reference to other services](#reference-to-other-services)
+    * [Using Interfaces, abstract/parent classes or aliases](#using-interfaces-abstractparent-classes-or-aliases)
     * [Values and environment variables](#values-and-environment-variables)
     * [Singletons](#singletons)
     * [Lazy services](#lazy-services)
     * [Exposing and nesting services](#exposing-and-nesting-services)
-    * [Configuring services via parent classes or interfaces](#configurung-services-via-parent-classes-or-interfaces)
+    * [Configuring services via parent classes or interfaces](#configuring-services-via-parent-classes-or-interfaces)
     * [Using method result as service](#using-method-result-as-service)
 
 ## Features
