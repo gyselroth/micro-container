@@ -22,6 +22,12 @@ class StringArgumentsComplex
         $this->foo = $foo;
     }
 
+    public function setFooBar(array $foobar)
+    {
+        $this->bar = $foobar['bar'];
+        $this->foo = $foobar['foo'];
+    }
+
     public function getFoo(): string
     {
         return $this->foo;

@@ -11,69 +11,13 @@ declare(strict_types=1);
 
 namespace Micro\Container;
 
-use Closure;
 use ProxyManager\Factory\LazyLoadingValueHolderFactory;
-use Psr\Container\ContainerInterface;
 use ReflectionClass;
 use ReflectionMethod;
+use ReflectionParameter;
 
-class Container implements ContainerInterface
+class Container extends AbstractContainer
 {
-    /**
-     * Config.
-     *
-     * @var Config
-     */
-    protected $config;
-
-    /**
-     * Service registry.
-     *
-     * @var array
-     */
-    protected $service = [];
-
-    /**
-     * Registered but not initialized service registry.
-     *
-     * @var array
-     */
-    protected $registry = [];
-
-    /**
-     * Parent container.
-     *
-     * @var ContainerInterface
-     */
-    protected $parent;
-
-    /**
-     * Children container.
-     *
-     * @var ContainerInterface[]
-     */
-    protected $children = [];
-
-    /**
-     * Parent service.
-     *
-     * @var mixed
-     */
-    protected $parent_service;
-
-    /**
-     * Create container.
-     *
-     * @param iterable           $config
-     * @param ContainerInterface $parent
-     */
-    public function __construct(Iterable $config = [], ?ContainerInterface $parent = null)
-    {
-        $this->config = new Config($config, $this);
-        $this->parent = $parent;
-        $this->service[ContainerInterface::class] = $this;
-    }
-
     /**
      * Get service.
      *
@@ -88,72 +32,6 @@ class Container implements ContainerInterface
         } catch (Exception\ServiceNotFound $e) {
             return $this->autoWireClass($name);
         }
-    }
-
-    /**
-     * Get parent container.
-     *
-     * @return ContainerInterface
-     */
-    public function getParent(): ?ContainerInterface
-    {
-        return $this->parent;
-    }
-
-    /**
-     * Add service.
-     *
-     * @param string $name
-     * @param mixed  $service
-     *
-     * @return Container
-     */
-    public function add(string $name, $service): self
-    {
-        if ($this->has($name)) {
-            throw new Exception\ServiceAlreadyExists('service '.$name.' is already registered');
-        }
-
-        $this->registry[$name] = $service;
-
-        return $this;
-    }
-
-    /**
-     * Check if service is registered.
-     *
-     * @param mixed $name
-     *
-     * @return bool
-     */
-    public function has($name): bool
-    {
-        return isset($this->service[$name]);
-    }
-
-    /**
-     * Set parent service on container
-     * (Used internally, there is no point to call this method directly).
-     *
-     * @param mixed $service
-     *
-     * @return ContainerInterface
-     */
-    public function setParentService($service): ContainerInterface
-    {
-        $this->parent_service = $service;
-
-        return $this;
-    }
-
-    /**
-     * Get config.
-     *
-     * @return Config
-     */
-    public function getConfig(): Config
-    {
-        return $this->config;
     }
 
     /**
@@ -190,26 +68,6 @@ class Container implements ContainerInterface
         }
 
         throw new Exception\ServiceNotFound("service $name was not found in service tree");
-    }
-
-    /**
-     * Check for static injections.
-     *
-     * @param string $name
-     *
-     * @return mixed
-     */
-    protected function addStaticService(string $name)
-    {
-        if ($this->registry[$name] instanceof Closure) {
-            $this->service[$name] = $this->registry[$name]->call($this);
-        } else {
-            $this->service[$name] = $this->registry[$name];
-        }
-
-        unset($this->registry[$name]);
-
-        return $this->service[$name];
     }
 
     /**
@@ -262,29 +120,6 @@ class Container implements ContainerInterface
         $reflection = new ReflectionClass(get_class($service));
         $config = $this->config->get($name);
         $service = $this->prepareService($name, $service, $reflection, $config);
-
-        return $service;
-    }
-
-    /**
-     * Store service.
-     *
-     * @param param string $name
-     * @param array        $config
-     * @param mixed        $service
-     *
-     * @return mixed
-     */
-    protected function storeService(string $name, array $config, $service)
-    {
-        if (true === $config['singleton']) {
-            return $service;
-        }
-        $this->service[$name] = $service;
-
-        if (isset($this->children[$name])) {
-            $this->children[$name]->setParentService($service);
-        }
 
         return $service;
     }
@@ -368,9 +203,12 @@ class Container implements ContainerInterface
         }
 
         $this->storeService($name, $config, $service);
-        //$config = $this->config->get($name);
 
         foreach ($config['calls'] as $call) {
+            if (null === $call) {
+                continue;
+            }
+
             if (!isset($call['method'])) {
                 throw new Exception\InvalidConfiguration('method is required for setter injection in service '.$name);
             }
@@ -411,16 +249,10 @@ class Container implements ContainerInterface
             if (isset($config['arguments'][$param_name])) {
                 $args[$param_name] = $this->parseParam($config['arguments'][$param_name], $name);
             } elseif (null !== $type) {
-                $type_class = $type->getName();
-
-                if ($type_class === $name) {
-                    throw new Exception\InvalidConfiguration('class '.$type_class.' can not depend on itself');
-                }
-
-                $args[$param_name] = $this->findService($name, $type_class);
+                $args[$param_name] = $this->resolveServiceArgument($name, $type, $param);
             } elseif ($param->isDefaultValueAvailable()) {
                 $args[$param_name] = $param->getDefaultValue();
-            } elseif ($param->allowsNull() && $param->hasType()) {
+            } elseif ($param->allowsNull()) {
                 $args[$param_name] = null;
             } else {
                 throw new Exception\InvalidConfiguration('no value found for argument '.$param_name.' in method '.$method->getName().' for service '.$name);
@@ -428,6 +260,34 @@ class Container implements ContainerInterface
         }
 
         return $args;
+    }
+
+    /**
+     * Resolve service argument.
+     *
+     * @param string              $name
+     * @param ReflectionClass     $type
+     * @param ReflectionParameter $param
+     *
+     * @return mixed
+     */
+    protected function resolveServiceArgument(string $name, ReflectionClass $type, ReflectionParameter $param)
+    {
+        $type_class = $type->getName();
+
+        if ($type_class === $name) {
+            throw new Exception\InvalidConfiguration('class '.$type_class.' can not depend on itself');
+        }
+
+        try {
+            return $this->findService($name, $type_class);
+        } catch (\Exception $e) {
+            if ($param->isDefaultValueAvailable() && null === $param->getDefaultValue()) {
+                return null;
+            }
+
+            throw $e;
+        }
     }
 
     /**

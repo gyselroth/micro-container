@@ -167,7 +167,17 @@ class Config
             return $config;
         }
 
-        return $this->mergeServiceConfig($name, $class, $config);
+        $config = $this->mergeServiceConfig($name, $class, $config);
+
+        if (isset($config['use'])) {
+            $class = $config['use'];
+        }
+
+        if (!class_exists($class)) {
+            throw new Exception\InvalidConfiguration('class '.$class.' is either not a class or can not be found');
+        }
+
+        return $config;
     }
 
     /**
@@ -204,7 +214,7 @@ class Config
         }
 
         if (false === $config['merge']) {
-            return $this->config[$name];
+            return $config;
         }
 
         $tree = $this->getConfigTree();
