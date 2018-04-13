@@ -1,4 +1,4 @@
-# Micro Dependency Injection Container
+# Dependency Injection Container
 [![Build Status](https://travis-ci.org/gyselroth/micro-container.svg?branch=master)](https://travis-ci.org/gyselroth/micro-container)
 [![Code Coverage](https://scrutinizer-ci.com/g/gyselroth/micro-container/badges/coverage.png?b=master)](https://scrutinizer-ci.com/g/gyselroth/micro-container/?branch=master)
 [![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/gyselroth/micro-container/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/gyselroth/micro-container/?branch=master)
