@@ -1,8 +1,8 @@
 {
     "name": "gyselroth/micro-container",
-    "description": "Simple php dependency injection container with autowiring support",
+    "description": "Lightweight php dependency injection container with full autowiring support and more",
     "keywords": ["micro", "di", "PSR-11"],
-    "homepage": "http://www.github.com/gyselroth/micro",
+    "homepage": "http://www.github.com/gyselroth/micro-container",
     "license": "MIT",
     "authors": [
         {
