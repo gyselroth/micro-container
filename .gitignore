@@ -1,1 +1,5 @@
 vendor
+.php_cs.cache
+.phpstan.lock
+.phpunit.lock
+build/

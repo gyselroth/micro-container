@@ -1,3 +1,14 @@
+## 2.0.0
+**Maintainer**: Raffael Sahli <sahli@gyselroth.com>\
+**Date**: Wed Jun 06 10:19:23 CEST 2018
+
+* [CHANGE] ::has() now return true even if the service is not yet resolve but could
+* [FEATURE] Added support for factory calls (static method call), see readme
+* [FEATURE] Added support for lazy callbacks, see readme
+* [CHANGE] Removed support for addService(),getParent(),setParent() to only support the psr11 supported public functions
+* [CHANGE] Added new unit tests
+* [CHANGE] If a service class depends on itself and gets not manually resolved a RuntimeException gets thrown instead Exception\InvalidConfiguration
+
 ## 1.0.1
 **Maintainer**: Raffael Sahli <sahli@gyselroth.com>\
 **Date**: Thu Apr 05 20:44:05 CEST 2018

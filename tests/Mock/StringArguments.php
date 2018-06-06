@@ -40,4 +40,9 @@ class StringArguments
     {
         return $this->bar;
     }
+
+    public static function factory($foo)
+    {
+        return new self($foo);
+    }
 }

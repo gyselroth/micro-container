@@ -11,8 +11,6 @@ declare(strict_types=1);
 
 namespace Micro\Container;
 
-use Psr\Container\ContainerInterface;
-
 class Config
 {
     /**
@@ -32,16 +30,17 @@ class Config
     /**
      * Container.
      *
-     * @var ContainerInterface
+     * @var RuntimeContainer
      */
     protected $container;
 
     /**
      * Create container.
      *
-     * @param iterable $config
+     * @param iterable         $config
+     * @param RuntimeContainer $container
      */
-    public function __construct(Iterable $config, ContainerInterface $container)
+    public function __construct(Iterable $config, RuntimeContainer $container)
     {
         $this->config = $config;
         $this->container = $container;
@@ -191,6 +190,7 @@ class Config
             'merge' => true,
             'singleton' => false,
             'lazy' => false,
+            'wrap' => false,
             'calls' => [],
             'selects' => [],
         ];
