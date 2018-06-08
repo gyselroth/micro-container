@@ -37,7 +37,7 @@ class RuntimeContainer
     /**
      * Parent container.
      *
-     * @var ContainerInterface
+     * @var ContainerInterface|RuntimeContainer
      */
     protected $parent;
 
@@ -210,24 +210,16 @@ class RuntimeContainer
             return $this->wireReference($name, $match[1], $config);
         }
 
+        $reflection = new ReflectionClass($class);
+
         if (isset($config['factory'])) {
-            if (!isset($config['factory']['method'])) {
-                throw new Exception\InvalidConfiguration('method is required for factory in service '.$name);
-            }
-
-            if (isset($config['factory']['use'])) {
-                $class = $config['factory']['use'];
-            }
-
-            $reflection = new ReflectionClass($class);
-            $factory = $reflection->getMethod($config['factory']['method']);
-            $args = $this->autoWireMethod($name, $factory, $config['factory']);
-            $instance = call_user_func_array([$class, $config['factory']['method']], $args);
+            $factory = $reflection->getMethod($config['factory']);
+            $args = $this->autoWireMethod($name, $factory, $config);
+            $instance = call_user_func_array([$class, $config['factory']], $args);
 
             return $this->prepareService($name, $instance, $reflection, $config);
         }
 
-        $reflection = new ReflectionClass($class);
         $constructor = $reflection->getConstructor();
 
         if (null === $constructor) {
@@ -339,7 +331,7 @@ class RuntimeContainer
         $this->storeService($name, $config, $service);
 
         foreach ($config['calls'] as $call) {
-            if (null === $call) {
+            if (!is_array($call)) {
                 continue;
             }
 

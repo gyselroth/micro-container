@@ -320,11 +320,10 @@ Example:
 ```php
 $config = [
     SmtpTransport::class => [
-        'factory' => [
-            'method' => 'factory',
-            'arguments' => [
-                'server' => '127.0.0.1'
-            ],
+        'use' => SmtpTransportFactory::class,
+        'factory' => 'factory_method'
+        'arguments' => [
+            'server' => '127.0.0.1'
         ]
     ]
 ];
@@ -332,27 +331,6 @@ $config = [
 $container = new Container($config);
 $transport = $container->get(SmtpTransport::class);
 ```
-
-By default the factory tries to call the specified method on the service class itself. If the factory is a separate class you may specify it so.
-
-Example:
-```php
-$config = [
-    SmtpTransport::class => [
-        'factory' => [
-            'use' => SmtpTransportFactory::class,
-            'method' => 'factory',
-            'arguments' => [
-                'server' => '127.0.0.1'
-            ],
-        ]
-    ]
-];
-
-$container = new Container($config);
-$transport = $container->get(SmtpTransport::class);
-```
-
 ### Lazy services
 Lazy services are great if you have very complex objects or just many of them. A service declared as `lazy` will be return as
 a proxy object and as soon as it is really required it gets initiallized. Proxy objects are implemented trough [Ocramius/ProxyManager](https://github.com/Ocramius/ProxyManager).

@@ -127,6 +127,27 @@ class ContainerTest extends TestCase
         $this->assertSame('foo', $service->getFoo());
     }
 
+    public function testSkipNonArrayCalls()
+    {
+        $config = [
+            Mock\StringArguments::class => [
+                'calls' => [
+                    null,
+                    [
+                        'method' => 'setFoo',
+                        'arguments' => [
+                            'foo' => 'foo',
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $container = new Container($config);
+        $service = $container->get(Mock\StringArguments::class);
+        $this->assertSame('foo', $service->getFoo());
+    }
+
     public function testSetterBoolInjectionAllowedNullValue()
     {
         $config = [
@@ -704,11 +725,9 @@ class ContainerTest extends TestCase
         $config = [
             'bar' => [
                 'use' => Mock\StringArguments::class,
-                'factory' => [
-                    'method' => 'factory',
-                    'arguments' => [
-                        'foo' => 'bar',
-                    ],
+                'factory' => 'factory',
+                'arguments' => [
+                    'foo' => 'bar',
                 ],
             ],
         ];
@@ -722,11 +741,9 @@ class ContainerTest extends TestCase
         $config = [
             'bar' => [
                 'use' => Mock\StringArguments::class,
-                'factory' => [
-                    'method' => 'factory',
-                    'arguments' => [
-                        'foo' => 'bar',
-                    ],
+                'factory' => 'factory',
+                'arguments' => [
+                    'foo' => 'bar',
                 ],
                 'calls' => [
                     [
@@ -741,35 +758,14 @@ class ContainerTest extends TestCase
         $this->assertSame('foofoo', $container->get('bar')->getFoo());
     }
 
-    public function testMissingFactoryMethod()
-    {
-        $this->expectException(Exception\InvalidConfiguration::class);
-        $config = [
-            'bar' => [
-                'use' => Mock\StringArguments::class,
-                'factory' => [
-                    'arguments' => [
-                        'foo' => 'bar',
-                    ],
-                ],
-            ],
-        ];
-
-        $container = new Container($config);
-        $container->get('bar');
-    }
-
     public function testFactorySeparateClass()
     {
         $config = [
             'bar' => [
-                'use' => Mock\StringArguments::class,
-                'factory' => [
-                    'use' => Mock\StringArgumentsFactory::class,
-                    'method' => 'build',
-                    'arguments' => [
-                        'foo' => 'bar',
-                    ],
+                'use' => Mock\StringArgumentsFactory::class,
+                'factory' => 'build',
+                'arguments' => [
+                    'foo' => 'bar',
                 ],
             ],
         ];
