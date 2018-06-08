@@ -23,7 +23,6 @@ however it still supports the most common needed features and combines that in a
   * [Documentation](#documentation)
     * [Configuration](#configuration)
     * [Retrieving services](#retrieving-services)
-    * [Adding services on the fly](#adding-services-on-the-fly)
     * [Autowiring](#autowiring)
     * [Constructor injection](#constructor-injection)
     * [Setter injection](#setter-injection)
@@ -31,7 +30,9 @@ however it still supports the most common needed features and combines that in a
     * [Using Interfaces, abstract/parent classes or aliases](#using-interfaces-abstractparent-classes-or-aliases)
     * [Values and environment variables](#values-and-environment-variables)
     * [Singletons](#singletons)
+    * [Factories](#factories)
     * [Lazy services](#lazy-services)
+    * [Lazy services wrapped in callbacks](#lazy-services-wrapped-in-callbacks)
     * [Exposing and nesting services](#exposing-and-nesting-services)
     * [Configuring services via parent classes or interfaces](#configuring-services-via-parent-classes-or-interfaces)
     * [Using method result as service](#using-method-result-as-service)
@@ -43,9 +44,11 @@ however it still supports the most common needed features and combines that in a
 * Configurable via native php array (or anything else decoded into an array)
 * Setter/Constructor injection
 * Env variables
-* Lazy loading
+* Lazy loading/Callback wrapping
 * Singletons
+* Factories
 * Configuration of multiple services via interface/parent class declarations
+* Supports parent container
 
 ## Requirements
 The library is only >= PHP 7.1 compatible.
@@ -162,15 +165,6 @@ request the logger:
 ```php
 $container = new Container();
 $container->get(LoggerInterface::class)->info('Hello world');
-```
-
-## Adding services on the fly
-You may want to add an existing service on the fly instead declaring it:
-
-```php
-$container = new Container();
-$service = new MyExampleService();
-$container->add('MyService', $service);
 ```
 
 ### Autowiring
@@ -319,6 +313,24 @@ $b = $container->get(SmtpTransport::class);
 
 `$a` and `$b` are different instances now. 
 
+### Factories
+Factories are usually static methods which return an instance of a class while only the factory knows how to construct such an object.
+
+Example:
+```php
+$config = [
+    SmtpTransport::class => [
+        'use' => SmtpTransportFactory::class,
+        'factory' => 'factory_method'
+        'arguments' => [
+            'server' => '127.0.0.1'
+        ]
+    ]
+];
+
+$container = new Container($config);
+$transport = $container->get(SmtpTransport::class);
+```
 ### Lazy services
 Lazy services are great if you have very complex objects or just many of them. A service declared as `lazy` will be return as
 a proxy object and as soon as it is really required it gets initiallized. Proxy objects are implemented trough [Ocramius/ProxyManager](https://github.com/Ocramius/ProxyManager).
@@ -341,6 +353,28 @@ $config = [
 ```
 Be careful with lazy services. Only use it if it makes sense.
 
+### Lazy services wrapped in callbacks
+Another way to achieve lazy services is to wrap them in a callback. The service only gets resolved if the callback gets executed.
+While `lazy` will return an exact copy (proxy) instance of the service, `wrap` will return a closure `function(){return $service;}` whereas $service gets resolved as soon as the callback gets executed.
+
+Example:
+```php
+$config = [
+    PDO::class => [
+        'arguments' => [
+            'dsn' => 'mysql:127.0.0.1'
+        ],
+        'wrap' => true
+    ]
+];
+
+$container = new Container($config);
+//Note: PDO::class is only resolved to a callback now, there is no actual instance yet.
+$pdo_callback = $container->get(PDO::class);
+
+//create instance
+$pdo = $pdo_callback();
+```
 
 ### Exposing and nesting services
 Services configured at the top level of the configuration are exposed by default. You can nest services via `services` to hide services within the container.

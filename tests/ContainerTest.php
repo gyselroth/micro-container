@@ -11,40 +11,16 @@ declare(strict_types=1);
 
 namespace Micro\Container\Testsuite;
 
+use Closure;
 use Micro\Container\Container;
 use Micro\Container\Exception;
 use PHPUnit\Framework\TestCase;
 use ProxyManager\Proxy\ProxyInterface;
 use Psr\Container\ContainerInterface;
+use RuntimeException;
 
 class ContainerTest extends TestCase
 {
-    public function testAddCallable()
-    {
-        $container = new Container();
-        $container->add('test', function () {
-            return new Mock\Simple();
-        });
-
-        $this->assertInstanceOf(Mock\Simple::class, $container->get('test'));
-    }
-
-    public function testAddStatic()
-    {
-        $container = new Container();
-        $container->add('test', new Mock\Simple());
-        $this->assertInstanceOf(Mock\Simple::class, $container->get('test'));
-    }
-
-    public function testAddStaticAlreadyExists()
-    {
-        $this->expectException(Exception\ServiceAlreadyExists::class);
-        $container = new Container();
-        $container->add('test', new Mock\Simple());
-        $this->assertInstanceOf(Mock\Simple::class, $container->get('test'));
-        $container->add('test', new Mock\Simple());
-    }
-
     public function testGetNonExistNamed()
     {
         $this->expectException(Exception\InvalidConfiguration::class);
@@ -111,6 +87,23 @@ class ContainerTest extends TestCase
         $this->assertSame('bar', $service->getFoo());
     }
 
+    public function testConstructorArgumentsOrderDoesNotMatter()
+    {
+        $config = [
+            Mock\StringArgumentsComplex::class => [
+                'arguments' => [
+                    'foo' => 'bar',
+                    'bar' => 'foo',
+                ],
+            ],
+        ];
+
+        $container = new Container($config);
+        $service = $container->get(Mock\StringArgumentsComplex::class);
+        $this->assertSame($service->getFoo(), 'bar');
+        $this->assertSame($service->getBar(), 'foo');
+    }
+
     public function testAddWithConstructorArgumentsAndCall()
     {
         $config = [
@@ -119,6 +112,27 @@ class ContainerTest extends TestCase
                     'foo' => 'bar',
                 ],
                 'calls' => [
+                    [
+                        'method' => 'setFoo',
+                        'arguments' => [
+                            'foo' => 'foo',
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $container = new Container($config);
+        $service = $container->get(Mock\StringArguments::class);
+        $this->assertSame('foo', $service->getFoo());
+    }
+
+    public function testSkipNonArrayCalls()
+    {
+        $config = [
+            Mock\StringArguments::class => [
+                'calls' => [
+                    null,
                     [
                         'method' => 'setFoo',
                         'arguments' => [
@@ -303,6 +317,26 @@ class ContainerTest extends TestCase
         $service = $container->get(Mock\StringArgumentsComplex::class);
     }
 
+    public function testInvalidCallMethod()
+    {
+        $this->expectException(Exception\InvalidConfiguration::class);
+        $config = [
+            Mock\StringArgumentsComplex::class => [
+                'arguments' => [
+                    'foo' => 'bar',
+                ],
+                'calls' => [
+                    [
+                        'method' => 'foo',
+                    ],
+                ],
+            ],
+        ];
+
+        $container = new Container($config);
+        $service = $container->get(Mock\StringArgumentsComplex::class);
+    }
+
     public function testHas()
     {
         $config = [
@@ -314,9 +348,15 @@ class ContainerTest extends TestCase
         ];
 
         $container = new Container($config);
-        $this->assertSame(false, $container->has(Mock\Simple::class));
+        $this->assertSame(true, $container->has(Mock\Simple::class));
         $service = $container->get(Mock\Simple::class);
         $this->assertSame(true, $container->has(Mock\Simple::class));
+    }
+
+    public function testHasNot()
+    {
+        $container = new Container([]);
+        $this->assertSame(false, $container->has('foobar'));
     }
 
     public function testHasSelf()
@@ -394,19 +434,6 @@ class ContainerTest extends TestCase
         $service2 = $container->get(Mock\StringArgumentsImplementation::class);
         $this->assertSame('bar', $service->getFoo());
         $this->assertSame('bar', $service2->getFoo());
-    }
-
-    public function testHasNoParentContainer()
-    {
-        $container = new Container([]);
-        $this->assertSame(null, $container->getParent());
-    }
-
-    public function testParentContainer()
-    {
-        $parent = new Container([]);
-        $container = new Container([], $parent);
-        $this->assertSame($parent, $container->getParent());
     }
 
     public function testGetLazyService()
@@ -691,5 +718,97 @@ class ContainerTest extends TestCase
 
         $container = new Container($config);
         $this->assertSame($container->get('foo'), $container->get('bar'));
+    }
+
+    public function testFactory()
+    {
+        $config = [
+            'bar' => [
+                'use' => Mock\StringArguments::class,
+                'factory' => 'factory',
+                'arguments' => [
+                    'foo' => 'bar',
+                ],
+            ],
+        ];
+
+        $container = new Container($config);
+        $this->assertSame('bar', $container->get('bar')->getFoo());
+    }
+
+    public function testFactorySubCall()
+    {
+        $config = [
+            'bar' => [
+                'use' => Mock\StringArguments::class,
+                'factory' => 'factory',
+                'arguments' => [
+                    'foo' => 'bar',
+                ],
+                'calls' => [
+                    [
+                        'method' => 'setFoo',
+                        'arguments' => ['foo' => 'foofoo'],
+                    ],
+                ],
+            ],
+        ];
+
+        $container = new Container($config);
+        $this->assertSame('foofoo', $container->get('bar')->getFoo());
+    }
+
+    public function testFactorySeparateClass()
+    {
+        $config = [
+            'bar' => [
+                'use' => Mock\StringArgumentsFactory::class,
+                'factory' => 'build',
+                'arguments' => [
+                    'foo' => 'bar',
+                ],
+            ],
+        ];
+
+        $container = new Container($config);
+        $this->assertSame('bar', $container->get('bar')->getFoo());
+    }
+
+    public function testWrapCallback()
+    {
+        $config = [
+            'bar' => [
+                'use' => Mock\StringArguments::class,
+                'arguments' => [
+                    'foo' => 'bar',
+                ],
+                'wrap' => true,
+            ],
+        ];
+
+        $container = new Container($config);
+        $this->assertInstanceOf(Closure::class, $container->get('bar'));
+        $this->assertSame('bar', $container->get('bar')()->getFoo());
+    }
+
+    public function testNonStringConstructor()
+    {
+        $config = [
+            Mock\IntArguments::class => [
+                'arguments' => [
+                    'foo' => 1,
+                ],
+            ],
+        ];
+
+        $container = new Container($config);
+        $this->assertSame(1, $container->get(Mock\IntArguments::class)->getFoo());
+    }
+
+    public function testDependencyBySelf()
+    {
+        $this->expectException(RuntimeException::class);
+        $container = new Container([]);
+        $service = $container->get(Mock\ClassDependencySelf::class);
     }
 }
