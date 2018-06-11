@@ -293,7 +293,7 @@ $config = [
 
 ### Singletons
 You may want to declare a service as a singleton (The default is `false`). If you do so everytime the
-service gets requested a new instance will be created. This can be achieved by setting the keyword `singleton` to true.
+service gets requested the same instance gets returned. This can be achieved by setting the keyword `singleton` to true.
 
 Example:
 ```php
