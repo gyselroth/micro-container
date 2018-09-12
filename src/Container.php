@@ -25,20 +25,17 @@ class Container implements ContainerInterface
     /**
      * Create container.
      *
-     * @param iterable           $config
      * @param ContainerInterface $parent
      */
     public function __construct(Iterable $config = [], ?ContainerInterface $parent = null)
     {
-        $this->container = new RuntimeContainer($config, $parent);
+        $this->container = new RuntimeContainer($config, $parent, $this);
     }
 
     /**
      * Get service.
      *
      * @param string $name
-     *
-     * @return mixed
      */
     public function get($name)
     {
@@ -49,8 +46,6 @@ class Container implements ContainerInterface
      * Check if service is registered.
      *
      * @param string $name
-     *
-     * @return bool
      */
     public function has($name): bool
     {

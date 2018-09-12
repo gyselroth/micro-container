@@ -58,14 +58,13 @@ class RuntimeContainer
     /**
      * Create container.
      *
-     * @param iterable                            $config
      * @param ContainerInterface|RuntimeContainer $parent
      */
-    public function __construct(Iterable $config = [], $parent = null)
+    public function __construct(Iterable $config, $parent, ContainerInterface $interface)
     {
         $this->config = new Config($config, $this);
         $this->parent = $parent;
-        $this->service[ContainerInterface::class] = $this;
+        $this->service[ContainerInterface::class] = $interface;
     }
 
     /**
@@ -81,7 +80,6 @@ class RuntimeContainer
     /**
      * Set parent service on container.
      *
-     * @param mixed $service
      *
      * @return ContainerInterface|RuntimeContainer
      */
@@ -94,8 +92,6 @@ class RuntimeContainer
 
     /**
      * Get config.
-     *
-     * @return Config
      */
     public function getConfig(): Config
     {
@@ -104,10 +100,6 @@ class RuntimeContainer
 
     /**
      * Get service.
-     *
-     * @param string $name
-     *
-     * @return mixed
      */
     public function get(string $name)
     {
@@ -120,10 +112,6 @@ class RuntimeContainer
 
     /**
      * Resolve service.
-     *
-     * @param string $name
-     *
-     * @return mixed
      */
     public function resolve(string $name)
     {
@@ -154,10 +142,6 @@ class RuntimeContainer
      * Store service.
      *
      * @param param string $name
-     * @param array        $config
-     * @param mixed        $service
-     *
-     * @return mixed
      */
     protected function storeService(string $name, array $config, $service)
     {
@@ -175,10 +159,6 @@ class RuntimeContainer
 
     /**
      * Wrap resolved service in callable if enabled.
-     *
-     * @param string $name
-     *
-     * @return mixed
      */
     protected function wrapService(string $name)
     {
@@ -196,10 +176,6 @@ class RuntimeContainer
 
     /**
      * Auto wire.
-     *
-     * @param string $name
-     *
-     * @return mixed
      */
     protected function autoWireClass(string $name)
     {
@@ -233,12 +209,6 @@ class RuntimeContainer
 
     /**
      * Wire named referenced service.
-     *
-     * @param string $name
-     * @param string $refrence
-     * @param array  $config
-     *
-     * @return mixed
      */
     protected function wireReference(string $name, string $reference, array $config)
     {
@@ -252,13 +222,6 @@ class RuntimeContainer
 
     /**
      * Get instance (virtual or real instance).
-     *
-     * @param string          $name
-     * @param ReflectionClass $class
-     * @param array           $arguments
-     * @param array           $config
-     *
-     * @return mixed
      */
     protected function createInstance(string $name, ReflectionClass $class, array $arguments, array $config)
     {
@@ -271,13 +234,6 @@ class RuntimeContainer
 
     /**
      * Create proxy instance.
-     *
-     * @param string          $name
-     * @param ReflectionClass $class
-     * @param array           $arguments
-     * @param array           $config
-     *
-     * @return mixed
      */
     protected function getProxyInstance(string $name, ReflectionClass $class, array $arguments, array $config)
     {
@@ -295,13 +251,6 @@ class RuntimeContainer
 
     /**
      * Create real instance.
-     *
-     * @param string          $name
-     * @param ReflectionClass $class
-     * @param array           $arguments
-     * @param array           $config
-     *
-     * @return mixed
      */
     protected function getRealInstance(string $name, ReflectionClass $class, array $arguments, array $config)
     {
@@ -313,13 +262,6 @@ class RuntimeContainer
 
     /**
      * Prepare service (execute sub selects and excute setter injections).
-     *
-     * @param string          $name
-     * @param mixed           $service
-     * @param ReflectionClass $class
-     * @param array           $config
-     *
-     * @return mixed
      */
     protected function prepareService(string $name, $service, ReflectionClass $class, array $config)
     {
@@ -356,12 +298,6 @@ class RuntimeContainer
 
     /**
      * Autowire method.
-     *
-     * @param string           $name
-     * @param ReflectionMethod $method
-     * @param array            $config
-     *
-     * @return array
      */
     protected function autoWireMethod(string $name, ReflectionMethod $method, array $config): array
     {
@@ -390,12 +326,6 @@ class RuntimeContainer
 
     /**
      * Resolve service argument.
-     *
-     * @param string              $name
-     * @param ReflectionClass     $type
-     * @param ReflectionParameter $param
-     *
-     * @return mixed
      */
     protected function resolveServiceArgument(string $name, ReflectionClass $type, ReflectionParameter $param)
     {
@@ -418,11 +348,6 @@ class RuntimeContainer
 
     /**
      * Parse param value.
-     *
-     * @param mixed  $param
-     * @param string $name
-     *
-     * @return mixed
      */
     protected function parseParam($param, string $name)
     {
@@ -452,9 +377,6 @@ class RuntimeContainer
 
     /**
      * Locate service.
-     *
-     * @param string $current_service
-     * @param string $service
      */
     protected function traverseTree(string $current_service, string $service)
     {
@@ -464,7 +386,7 @@ class RuntimeContainer
 
         $config = $this->config->get($current_service);
         if (isset($config['services'])) {
-            $this->children[$current_service] = new self($config['services'], $this);
+            $this->children[$current_service] = new self($config['services'], $this, $this->service[ContainerInterface::class]);
 
             return $this->children[$current_service]->get($service);
         }

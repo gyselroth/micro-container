@@ -36,9 +36,6 @@ class Config
 
     /**
      * Create container.
-     *
-     * @param iterable         $config
-     * @param RuntimeContainer $container
      */
     public function __construct(Iterable $config, RuntimeContainer $container)
     {
@@ -48,8 +45,6 @@ class Config
 
     /**
      * Get config.
-     *
-     * @return iterable
      */
     public function getConfig(): Iterable
     {
@@ -58,10 +53,6 @@ class Config
 
     /**
      * Check if service is known to container config.
-     *
-     * @param string $name
-     *
-     * @return bool
      */
     public function has(string $name): bool
     {
@@ -70,10 +61,6 @@ class Config
 
     /**
      * Get service configuration.
-     *
-     * @param string $name
-     *
-     * @return array
      */
     public function get(string $name): array
     {
@@ -93,10 +80,6 @@ class Config
 
     /**
      * Parse env param.
-     *
-     * @param string $param
-     *
-     * @return string
      */
     public function getEnv(string $param): string
     {
@@ -117,12 +100,6 @@ class Config
 
     /**
      * Parse env.
-     *
-     * @param string $param
-     * @param array  $variables
-     * @param int    $key
-     *
-     * @return string
      */
     protected function parseEnv(string $param, array $variables, int $key): string
     {
@@ -139,10 +116,6 @@ class Config
 
     /**
      * Create service config.
-     *
-     * @param string $name
-     *
-     * @return array
      */
     protected function createServiceConfig(string $name): array
     {
@@ -181,8 +154,6 @@ class Config
 
     /**
      * Get service defaults.
-     *
-     * @return array
      */
     protected function getServiceDefaults(): array
     {
@@ -198,12 +169,6 @@ class Config
 
     /**
      * Find parent classes or interfaces and merge service configurations.
-     *
-     * @param string $name
-     * @param string $class
-     * @param array  $config
-     *
-     * @return array
      */
     protected function mergeServiceConfig(string $name, string $class, array $config): array
     {
@@ -236,8 +201,6 @@ class Config
 
     /**
      * Get config tree.
-     *
-     * @return array
      */
     protected function getConfigTree(): array
     {

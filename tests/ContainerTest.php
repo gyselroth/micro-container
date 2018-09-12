@@ -365,6 +365,12 @@ class ContainerTest extends TestCase
         $this->assertSame(true, $container->has(ContainerInterface::class));
     }
 
+    public function testSelfIsSelf()
+    {
+        $container = new Container();
+        $this->assertSame($container, $container->get(ContainerInterface::class));
+    }
+
     public function testSingleton()
     {
         $config = [
