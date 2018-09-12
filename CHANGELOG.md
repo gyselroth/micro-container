@@ -1,3 +1,10 @@
+## 2.0.1
+**Maintainer**: Raffael Sahli <sahli@gyselroth.com>\
+**Date**: Wed Sept 12 14:02:23 CEST 2018
+
+* [FIX] fixed service Micro\Container\RuntimeContainer instead Psr\Container\ContainerInterface
+
+
 ## 2.0.0
 **Maintainer**: Raffael Sahli <sahli@gyselroth.com>\
 **Date**: Wed Jun 06 10:19:23 CEST 2018
@@ -9,6 +16,7 @@
 * [CHANGE] Added new unit tests
 * [CHANGE] If a service class depends on itself and gets not manually resolved a RuntimeException gets thrown instead Exception\InvalidConfiguration
 
+
 ## 1.0.1
 **Maintainer**: Raffael Sahli <sahli@gyselroth.com>\
 **Date**: Thu Apr 05 20:44:05 CEST 2018
@@ -19,6 +27,7 @@
 * [FIX] Sets argument to null if it is typehinted and has a default value of null (instead the php 7.1 ?Typehint declaration) 
 * [CHANGE] Split Container into Container and AbstractContainer
 * [CHANGE] Added new unit tests
+
 
 ## 1.0.0
 **Maintainer**: Raffael Sahli <sahli@gyselroth.com>\
@@ -32,6 +41,7 @@
 * [CHANGE] Exracted configuration into Micro\Container\Config
 * [FIX] Fixed multiple env variables declared in the same argument string
 * [FIX] Fixed parent linking services of the same type
+
 
 ## 0.1.4
 **Maintainer**: Raffael Sahli <sahli@gyselroth.com>\
