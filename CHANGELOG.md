@@ -1,3 +1,10 @@
+## 2.0.2
+**Maintainer**: Raffael Sahli <sahli@gyselroth.com>\
+**Date**: Mon Nov 19 14:40:31  CET 2018
+
+* [CHANGE]  Chaining calls and selects calls in a mixed declaration. #7
+
+
 ## 2.0.1
 **Maintainer**: Raffael Sahli <sahli@gyselroth.com>\
 **Date**: Wed Sept 12 14:02:23 CEST 2018

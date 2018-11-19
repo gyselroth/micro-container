@@ -140,8 +140,6 @@ class RuntimeContainer
 
     /**
      * Store service.
-     *
-     * @param param string $name
      */
     protected function storeService(string $name, array $config, $service)
     {
@@ -265,6 +263,7 @@ class RuntimeContainer
      */
     protected function prepareService(string $name, $service, ReflectionClass $class, array $config)
     {
+        //This is deprecated as of v2.0.2 and gets removed in 3.0.0
         foreach ($config['selects'] as $select) {
             $args = $this->autoWireMethod($name, $class->getMethod($select['method']), $select);
             $service = call_user_func_array([&$service, $select['method']], $args);
@@ -290,7 +289,11 @@ class RuntimeContainer
             }
 
             $arguments = $this->autoWireMethod($name, $method, $call);
-            call_user_func_array([&$service, $call['method']], $arguments);
+            $result = call_user_func_array([&$service, $call['method']], $arguments);
+
+            if (isset($call['select']) && true === $call['select']) {
+                $service = $result;
+            }
         }
 
         return $service;
