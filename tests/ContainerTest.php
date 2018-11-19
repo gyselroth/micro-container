@@ -692,6 +692,26 @@ class ContainerTest extends TestCase
         $this->assertSame('bar', $container->get(Mock\StringArguments::class));
     }
 
+    public function testServiceWhichUsesMethodResultInCallsDefintion()
+    {
+        $config = [
+            Mock\StringArguments::class => [
+                'arguments' => [
+                    'foo' => 'bar',
+                ],
+                'calls' => [
+                    [
+                        'method' => 'getFoo',
+                        'select' => true,
+                    ],
+                ],
+            ],
+        ];
+
+        $container = new Container($config);
+        $this->assertSame('bar', $container->get(Mock\StringArguments::class));
+    }
+
     public function testServiceWhichUsesChainedMethodResult()
     {
         $config = [

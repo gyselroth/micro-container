@@ -174,7 +174,9 @@ If it is not configured but can be resolved anyway you're good to go.
 The container tries to resolve everything possible automatically. You only need to configure what is really required.
 
 ### Constructor injection
-You can pass constructor arguments via the keyword `arguments`. **Attention**: The container is based on named arguments.
+You can pass constructor arguments via the keyword `arguments`.
+
+> **Attention**: The container is based on named arguments.
 Order does not matter but you need to name the arguments as they are defined in the constructor of a class itself.
 
 Example:
@@ -501,15 +503,42 @@ $config = [
     ],
     MongoDB\Database::class => [
         'use' => '{MongoDB\Client}',
-        'selects' => [[
+        'calls' => [[
             'method' => 'selectDatabase',
             'arguments' => [
                 'databaseName' => 'my_database'
-            ]
+            ],
+            'select' => true
         ]]
     ]
 ]
 ```
 Instead setting a specific class in the `use` statement you can wrap another service in `{}` to use that service as a parent service.
-The service `MongoDB\Database` is now actually an instance of `MongoDB\Client`. We can use the statement `selects` to call a method on that very instance
-and using the result of it as our service. `selects` also supports chaining since you need to define an array of methods anyway. Therefore if a seccond method is defined the method would be called on the result of the first selects method (And so on).
+The service `MongoDB\Database` is now actually an instance of `MongoDB\Client`. 
+We can declare a calls statement with the option `select` to `true`, this will tell the container, that we want to use the result of `selectDatabase`.
+
+>**Note**: `calls` supports chaining of multiple method calls. You may also mix select=true/false methods but keep in mind that the order matters!. All calls will get executed in the configured order.
+
+This example will build an [elasticsearch client](https://github.com/elastic/elasticsearch-php) using first a factory and on the factory result a `setHosts` call gets executed and from that a `build` call gets executed whereas we use the result of as value for
+the server `Elasticsearch\Elasticsearch\Client::class`.
+
+```php
+$config = [
+    Elasticsearch\Elasticsearch\Client::class => [
+        'use' => Elasticsearch\Elasticsearch\ClientBuilder::class,
+        'factory' => 'create',
+        'calls' => [
+            [
+                'method' => 'setHosts',
+                'arguments' => ['hosts' => ["http://localhost:9200"]]
+            ],
+            [
+                'method' => 'build',
+                'select' => true,
+            ]
+        ],
+    ],
+]
+```
+
+>**Note**: The usage of the `selects` statement besides `calls` is deprecated as of v2.0.2 and gets removed in v3.0.0. The only supported option beginning with v3.0.0 is the `select` statement within `calls`.
