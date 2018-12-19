@@ -1,8 +1,15 @@
+## 2.0.3
+**Maintainer**: Raffael Sahli <sahli@gyselroth.com>\
+**Date**: Wed Dez 19 11:15:31 CET 2018
+
+* [FIX] "expected to be a reference, value given in" for arguments as refernece with default value #9
+
+
 ## 2.0.2
 **Maintainer**: Raffael Sahli <sahli@gyselroth.com>\
-**Date**: Mon Nov 19 14:40:31  CET 2018
+**Date**: Mon Nov 19 14:40:31 CET 2018
 
-* [CHANGE]  Chaining calls and selects calls in a mixed declaration. #7
+* [CHANGE] Chaining calls and selects calls in a mixed declaration. #7
 
 
 ## 2.0.1

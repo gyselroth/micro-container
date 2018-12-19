@@ -831,6 +831,26 @@ class ContainerTest extends TestCase
         $this->assertSame(1, $container->get(Mock\IntArguments::class)->getFoo());
     }
 
+    public function testPassByReferenceDefaultValue()
+    {
+        $container = new Container();
+        $this->assertSame('bar', $container->get(Mock\ClassReferenceArgument::class)->getFoo());
+    }
+
+    public function testPassByReferenceValue()
+    {
+        $config = [
+            Mock\ClassReferenceArgument::class => [
+                'arguments' => [
+                    'foo' => 'foo',
+                ],
+            ],
+        ];
+
+        $container = new Container($config);
+        $this->assertSame('foo', $container->get(Mock\ClassReferenceArgument::class)->getFoo());
+    }
+
     public function testDependencyBySelf()
     {
         $this->expectException(RuntimeException::class);

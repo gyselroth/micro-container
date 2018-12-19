@@ -322,6 +322,11 @@ class RuntimeContainer
             } else {
                 throw new Exception\InvalidConfiguration('no value found for argument '.$param_name.' in method '.$method->getName().' for service '.$name);
             }
+
+            if (!$param->canBePassedByValue()) {
+                $value = &$args[$param_name];
+                $args[$param_name] = &$value;
+            }
         }
 
         return $args;
