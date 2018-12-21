@@ -6,12 +6,9 @@
 [![GitHub release](https://img.shields.io/github/release/gyselroth/micro-container.svg)](https://github.com/gyselroth/micro-container/releases)
 [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/gyselroth/micro-container/master/LICENSE)
 
-## Description
 This is a lightweight dependency injection container for PHP 7.1+.
-It supports full autowiring and lets you configure the container with whatever config system you want. It is completely configurable via a simple array.
-Since it does build everything on the fly (No worries reflection is cached by PHP itself) it is super fast and easy to use.
-Of course its features are limited compared to a DIC like Symfony or PHP-DI but it will fit for most projects and the configuration is simpler and feels more lightweight,
-however it still supports the most common needed features and combines that in a library as lightweight as possible.
+It supports full autowiring and lets you configure the container with whatever configuration format you want.
+Since it is written to be lightweight and does build everything on the fly (No worries reflection is cached by PHP itself) it is super easy to use and still very fast. Despite the fact of being lightweight it still offers enough features to use it in a major project.
 
 # Table of Contents
   * [Description](#description)
@@ -43,7 +40,7 @@ however it still supports the most common needed features and combines that in a
 * Full inbuilt autowiring
 * Configurable via native php array (or anything else decoded into an array)
 * Setter/Constructor injection
-* Env variables
+* Environment variables
 * Lazy loading/Callback wrapping
 * Singletons
 * Factories
@@ -335,7 +332,7 @@ $transport = $container->get(SmtpTransport::class);
 ```
 ### Lazy services
 Lazy services are great if you have very complex objects or just many of them. A service declared as `lazy` will be return as
-a proxy object and as soon as it is really required it gets initiallized. Proxy objects are implemented trough [Ocramius/ProxyManager](https://github.com/Ocramius/ProxyManager).
+a proxy object and as soon as it is really required it gets initialized. Proxy objects are implemented trough [Ocramius/ProxyManager](https://github.com/Ocramius/ProxyManager).
 
 Let's say there is a PDO service and it is required by lots of other services and it does already connect to the database server within the constructor.
 This is fine but may be not usable if you only rely on the connection at certain points in your app. 
@@ -412,9 +409,9 @@ $config = [
 In the above example the service `StreamHandler::class` is a sub service of `LoggerInterface::class` and can not be requested directly from the container.
 
 ### Configuring services via parent classes or interfaces
-It is also possible to configure services of the same type with one decleration.
+It is also possible to configure services of the same type with one declaration.
 Of the same type means what parent classes or interfaces a certain class implements.
-All service declerations get merged during requesting a service.
+All service declarations get merged during requesting a service.
 
 Example:
 ```php
@@ -441,7 +438,7 @@ $c = $container->get(Job\C::class);
 All implementations of `JobInterface::class` are now singletons and have a constructor argument `bar` set to foo
 expect `Job\C::class` which is also a singleton but the constructor argument `bar` is set too bar.
 
-This also works for nested services and the whole sub service tree get merged with declerations of the same type.
+This also works for nested services and the whole sub service tree get merged with declarations of the same type.
 For example a sub service checks parent service declarations of the same and will merge those.
 
 Let's say we have a job manager and a job class which implements the interface JobInterface:
@@ -485,8 +482,8 @@ can disable this feature by setting `merge` to `false` on the given service.
 
 
 ### Using method result as service
-It is possible to define a service which does use the result of a method call of another service. Have a look at this example where we need 
-an instance of `MongoDB\Database` but this instance must be created from `MongoDB\Client`.
+It is possible to define a service which does use the result of a method call of another service. Have a look at this example where we use the [MongoDB library](https://github.com/mongodb/mongo-php-library) and
+from it an instance of `MongoDB\Database` but this instance must be created from `MongoDB\Client`.
 ```php
 $config = [
     MongoDB\Client::class => [
@@ -517,7 +514,7 @@ Instead setting a specific class in the `use` statement you can wrap another ser
 The service `MongoDB\Database` is now actually an instance of `MongoDB\Client`. 
 We can declare a calls statement with the option `select` to `true`, this will tell the container, that we want to use the result of `selectDatabase`.
 
->**Note**: `calls` supports chaining of multiple method calls. You may also mix select=true/false methods but keep in mind that the order matters!. All calls will get executed in the configured order.
+>**Note**: `calls` supports chaining of multiple method calls. You may also mix select=true/false methods but keep in mind that the order matters! All calls will get executed in the configured order.
 
 This example will build an [elasticsearch client](https://github.com/elastic/elasticsearch-php) using first a factory and on the factory result a `setHosts` call gets executed and from that a `build` call gets executed whereas we use the result of as value for
 the server `Elasticsearch\Elasticsearch\Client::class`.
