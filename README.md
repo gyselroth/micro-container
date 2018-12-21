@@ -1,4 +1,4 @@
-# Micro Dependency Injection Container
+# Dependency Injection Container
 [![Build Status](https://travis-ci.org/gyselroth/micro-container.svg?branch=master)](https://travis-ci.org/gyselroth/micro-container)
 [![Code Coverage](https://scrutinizer-ci.com/g/gyselroth/micro-container/badges/coverage.png?b=master)](https://scrutinizer-ci.com/g/gyselroth/micro-container/?branch=master)
 [![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/gyselroth/micro-container/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/gyselroth/micro-container/?branch=master)
@@ -291,8 +291,8 @@ $config = [
 ```
 
 ### Singletons
-You may want to declare a service as a singleton (The default is `false`). If you do so every time the
-service gets requested a new instance will be created. This can be achieved by setting the keyword `singleton` to true.
+You may want to declare a service as a singleton (The default is `false`). If you do so everytime the
+service gets requested the same instance gets returned. This can be achieved by setting the keyword `singleton` to true.
 
 Example:
 ```php
