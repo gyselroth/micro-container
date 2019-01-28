@@ -158,7 +158,7 @@ class RuntimeContainer
             $that = $this;
 
             return function () use ($that, $name, $parameters) {
-                return $that->autoWireClass($name);
+                return $that->autoWireClass($name, $parameters);
             };
         }
 
@@ -194,12 +194,12 @@ class RuntimeContainer
         $constructor = $reflection->getConstructor();
 
         if (null === $constructor) {
-            return $this->storeService($name, $config, new $class(), is_null($parameters));
+            return $this->storeService($name, $config, new $class());
         }
 
         $args = $this->autoWireMethod($name, $constructor, $config, $parameters);
 
-        return $this->createInstance($name, $reflection, $args, $config, is_null($parameters));
+        return $this->createInstance($name, $reflection, $args, $config);
     }
 
     /**
