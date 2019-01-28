@@ -61,7 +61,7 @@ class ContainerTest extends TestCase
         $config = [
             Mock\StringArgumentsComplex::class => [
                 'arguments' => [
-                    'foo' => 'bar',
+                    'bar' => 'foo',
                 ],
                 'calls' => [[
                     'method' => 'setFooBar',
@@ -86,7 +86,7 @@ class ContainerTest extends TestCase
         $config = [
             Mock\StringArgumentsComplex::class => [
                 'arguments' => [
-                    'foo' => 'bar',
+                    'bar' => 'bar',
                 ],
             ],
         ];
@@ -180,7 +180,7 @@ class ContainerTest extends TestCase
         $config = [
             Mock\StringArgumentsComplex::class => [
                 'arguments' => [
-                    'foo' => 'bar',
+                    'bar' => 'bar',
                 ],
                 'calls' => [
                     [
