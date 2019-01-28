@@ -57,10 +57,8 @@ class RuntimeContainer
 
     /**
      * Create container.
-     *
-     * @param ContainerInterface|RuntimeContainer $parent
      */
-    public function __construct(Iterable $config, $parent, ContainerInterface $interface)
+    public function __construct(array $config, $parent, ContainerInterface $interface)
     {
         $this->config = new Config($config, $this);
         $this->parent = $parent;
@@ -69,8 +67,6 @@ class RuntimeContainer
 
     /**
      * Get parent container.
-     *
-     * @return ContainerInterface|RuntimeContainer
      */
     public function getParent()
     {
@@ -79,9 +75,6 @@ class RuntimeContainer
 
     /**
      * Set parent service on container.
-     *
-     *
-     * @return ContainerInterface|RuntimeContainer
      */
     public function setParentService($service)
     {
@@ -101,26 +94,26 @@ class RuntimeContainer
     /**
      * Get service.
      */
-    public function get(string $name)
+    public function get(string $name, ?array $parameters = null)
     {
         try {
-            return $this->resolve($name);
+            return $this->resolve($name, $parameters);
         } catch (Exception\ServiceNotFound $e) {
-            return $this->wrapService($name);
+            return $this->wrapService($name, $parameters);
         }
     }
 
     /**
      * Resolve service.
      */
-    public function resolve(string $name)
+    public function resolve(string $name, ?array $parameters = null)
     {
         if (isset($this->service[$name])) {
             return $this->service[$name];
         }
 
         if ($this->config->has($name)) {
-            return $this->wrapService($name);
+            return $this->wrapService($name, $parameters);
         }
 
         if (null !== $this->parent_service) {
@@ -132,7 +125,7 @@ class RuntimeContainer
         }
 
         if (null !== $this->parent) {
-            return $this->parent->resolve($name);
+            return $this->parent->resolve($name, $parameters);
         }
 
         throw new Exception\ServiceNotFound("service $name was not found in service tree");
@@ -143,7 +136,7 @@ class RuntimeContainer
      */
     protected function storeService(string $name, array $config, $service)
     {
-        if (true === $config['singleton']) {
+        if (false === $config['singleton']) {
             return $service;
         }
         $this->service[$name] = $service;
@@ -158,27 +151,31 @@ class RuntimeContainer
     /**
      * Wrap resolved service in callable if enabled.
      */
-    protected function wrapService(string $name)
+    protected function wrapService(string $name, ?array $parameters = null)
     {
         $config = $this->config->get($name);
         if (true === $config['wrap']) {
             $that = $this;
 
-            return function () use ($that, $name) {
+            return function () use ($that, $name, $parameters) {
                 return $that->autoWireClass($name);
             };
         }
 
-        return $this->autoWireClass($name);
+        return $this->autoWireClass($name, $parameters);
     }
 
     /**
      * Auto wire.
      */
-    protected function autoWireClass(string $name)
+    protected function autoWireClass(string $name, ?array $parameters = null)
     {
         $config = $this->config->get($name);
         $class = $config['use'];
+
+        if (null !== $parameters) {
+            $config['singleton'] = false;
+        }
 
         if (preg_match('#^\{([^{}]+)\}$#', $class, $match)) {
             return $this->wireReference($name, $match[1], $config);
@@ -188,7 +185,7 @@ class RuntimeContainer
 
         if (isset($config['factory'])) {
             $factory = $reflection->getMethod($config['factory']);
-            $args = $this->autoWireMethod($name, $factory, $config);
+            $args = $this->autoWireMethod($name, $factory, $config, $parameters);
             $instance = call_user_func_array([$class, $config['factory']], $args);
 
             return $this->prepareService($name, $instance, $reflection, $config);
@@ -197,12 +194,12 @@ class RuntimeContainer
         $constructor = $reflection->getConstructor();
 
         if (null === $constructor) {
-            return $this->storeService($name, $config, new $class());
+            return $this->storeService($name, $config, new $class(), is_null($parameters));
         }
 
-        $args = $this->autoWireMethod($name, $constructor, $config);
+        $args = $this->autoWireMethod($name, $constructor, $config, $parameters);
 
-        return $this->createInstance($name, $reflection, $args, $config);
+        return $this->createInstance($name, $reflection, $args, $config, is_null($parameters));
     }
 
     /**
@@ -263,12 +260,6 @@ class RuntimeContainer
      */
     protected function prepareService(string $name, $service, ReflectionClass $class, array $config)
     {
-        //This is deprecated as of v2.0.2 and gets removed in 3.0.0
-        foreach ($config['selects'] as $select) {
-            $args = $this->autoWireMethod($name, $class->getMethod($select['method']), $select);
-            $service = call_user_func_array([&$service, $select['method']], $args);
-        }
-
         $this->storeService($name, $config, $service);
 
         foreach ($config['calls'] as $call) {
@@ -302,7 +293,7 @@ class RuntimeContainer
     /**
      * Autowire method.
      */
-    protected function autoWireMethod(string $name, ReflectionMethod $method, array $config): array
+    protected function autoWireMethod(string $name, ReflectionMethod $method, array $config, ?array $parameters = null): array
     {
         $params = $method->getParameters();
         $args = [];
@@ -311,7 +302,9 @@ class RuntimeContainer
             $type = $param->getClass();
             $param_name = $param->getName();
 
-            if (isset($config['arguments'][$param_name])) {
+            if (isset($parameters[$param_name])) {
+                $args[$param_name] = $parameters[$param_name];
+            } elseif (isset($config['arguments'][$param_name])) {
                 $args[$param_name] = $this->parseParam($config['arguments'][$param_name], $name);
             } elseif (null !== $type) {
                 $args[$param_name] = $this->resolveServiceArgument($name, $type, $param);

@@ -16,7 +16,7 @@ class Config
     /**
      * Config.
      *
-     * @var iterable
+     * @var array
      */
     protected $config = [];
 
@@ -37,7 +37,7 @@ class Config
     /**
      * Create container.
      */
-    public function __construct(Iterable $config, RuntimeContainer $container)
+    public function __construct(array $config, RuntimeContainer $container)
     {
         $this->config = $config;
         $this->container = $container;
@@ -46,7 +46,7 @@ class Config
     /**
      * Get config.
      */
-    public function getConfig(): Iterable
+    public function getConfig(): array
     {
         return $this->config;
     }
@@ -159,7 +159,7 @@ class Config
     {
         return [
             'merge' => true,
-            'singleton' => false,
+            'singleton' => true,
             'lazy' => false,
             'wrap' => false,
             'calls' => [],
