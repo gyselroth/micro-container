@@ -49,10 +49,20 @@ class ContainerTest extends TestCase
         $this->assertSame('bar', $service->getFoo());
     }
 
+    public function testAddWithConstructorArgumentsMissingArgument()
+    {
+        $this->expectException(Exception\InvalidConfiguration::class);
+        $container = new Container();
+        $service = $container->get(Mock\StringArgumentsComplex::class);
+    }
+
     public function testSetArrayOfArguments()
     {
         $config = [
             Mock\StringArgumentsComplex::class => [
+                'arguments' => [
+                    'foo' => 'bar',
+                ],
                 'calls' => [[
                     'method' => 'setFooBar',
                     'arguments' => [
