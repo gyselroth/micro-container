@@ -16,7 +16,7 @@ class StringArgumentsComplex
     protected $bar;
     protected $foo;
 
-    public function __construct(string $bar, string $foo)
+    public function __construct(string $bar, string $foo = 'bar')
     {
         $this->bar = $bar;
         $this->foo = $foo;
