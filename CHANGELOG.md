@@ -1,3 +1,12 @@
+## 2.1.0
+**Maintainer**: Raffael Sahli <sahli@gyselroth.com>\
+**Date**: Mon Jan 28 11:26:33  CET 2019
+
+* [FEATURE] Build instances with runtime arguments #12 
+* [CHANGE] singleton: true should be the default (which it is), but true/false should be switched. #13 
+* [CHANGE] Removed the deprecated selects functionality (use select: true for calls statements)
+
+
 ## 2.0.3
 **Maintainer**: Raffael Sahli <sahli@gyselroth.com>\
 **Date**: Wed Dez 19 11:15:31 CET 2018

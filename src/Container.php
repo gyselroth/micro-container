@@ -24,18 +24,22 @@ class Container implements ContainerInterface
 
     /**
      * Create container.
-     *
-     * @param ContainerInterface $parent
      */
-    public function __construct(Iterable $config = [], ?ContainerInterface $parent = null)
+    public function __construct(array $config = [], ?ContainerInterface $parent = null)
     {
         $this->container = new RuntimeContainer($config, $parent, $this);
     }
 
     /**
+     * Build an entry of the container by its name.
+     */
+    public function make(string $name, array $parameters = [])
+    {
+        return $this->container->get($name, $parameters);
+    }
+
+    /**
      * Get service.
-     *
-     * @param string $name
      */
     public function get($name)
     {
@@ -44,8 +48,6 @@ class Container implements ContainerInterface
 
     /**
      * Check if service is registered.
-     *
-     * @param string $name
      */
     public function has($name): bool
     {

@@ -33,6 +33,7 @@ Since it is written to be lightweight and does build everything on the fly (No w
     * [Exposing and nesting services](#exposing-and-nesting-services)
     * [Configuring services via parent classes or interfaces](#configuring-services-via-parent-classes-or-interfaces)
     * [Using method result as service](#using-method-result-as-service)
+    * [Make at runtime](#make-at-runtime)
 
 ## Features
 
@@ -291,8 +292,8 @@ $config = [
 ```
 
 ### Singletons
-You may want to declare a service as a singleton (The default is `false`). If you do so everytime the
-service gets requested the same instance gets returned. This can be achieved by setting the keyword `singleton` to true.
+A service is by default a singleton. If a service once is created it will be used if another service requires the same dependency.
+This behaviour might be changed to `singleton: false` which will always resolve the requested service.
 
 Example:
 ```php
@@ -301,7 +302,7 @@ $config = [
         'arguments' => [
             'server' => '127.0.0.1'
         ],
-        'singleton' => true
+        'singleton' => false
     ]
 ];
 
@@ -539,3 +540,21 @@ $config = [
 ```
 
 >**Note**: The usage of the `selects` statement besides `calls` is deprecated as of v2.0.2 and gets removed in v3.0.0. The only supported option beginning with v3.0.0 is the `select` statement within `calls`.
+
+### Make at runtime
+
+Besides static configuration of the service tree, Micro\Container also allows to build instances at runtime. This is especially useful if 
+service constructors need arguments which are only ever known at runtime.
+
+>**Note**: `make()` is not compatible with PSR-11.
+
+```php
+$service = $container->make(JobInterface::class, [
+    'arg1' => 'myvalue'
+]);
+
+Like everthing else, the parameters array excepts an array with named parameters to build the service. It is certainly possible 
+to combine arguments at runtime and statically configured arguments within the dic configuration.
+
+>**Note**: Dynamically created instances with `make()` are always `singleton: false`.
+```

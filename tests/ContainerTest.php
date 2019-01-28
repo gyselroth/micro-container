@@ -378,12 +378,62 @@ class ContainerTest extends TestCase
                 'arguments' => [
                     'foo' => 'bar',
                 ],
-                'singleton' => true,
+                'singleton' => false,
             ],
         ];
 
         $container = new Container($config);
         $this->assertNotSame($container->get(Mock\Simple::class), $container->get(Mock\Simple::class));
+    }
+
+    public function testMakeInstanceArgsOnRuntime()
+    {
+        $config = [
+            Mock\StringArguments::class => [
+                'arguments' => [
+                    'foo' => 'bar',
+                ],
+            ],
+        ];
+
+        $container = new Container($config);
+        $instance = $container->make(Mock\StringArguments::class, ['foo' => 'foobar']);
+
+        $this->assertSame('foobar', $instance->getFoo());
+    }
+
+    public function testMakeInstanceArgsOnRuntimeMixed()
+    {
+        $config = [
+            Mock\StringArgumentsComplex::class => [
+                'arguments' => [
+                    'foo' => 'bar',
+                ],
+            ],
+        ];
+
+        $container = new Container($config);
+        $instance = $container->make(Mock\StringArgumentsComplex::class, ['bar' => 'foobar']);
+
+        $this->assertSame('bar', $instance->getFoo());
+        $this->assertSame('foobar', $instance->getBar());
+    }
+
+    public function testMakeInstanceArgsOnRuntimeMixedNotSameInstance()
+    {
+        $config = [
+            Mock\StringArgumentsComplex::class => [
+                'arguments' => [
+                    'foo' => 'bar',
+                ],
+            ],
+        ];
+
+        $container = new Container($config);
+        $instance1 = $container->make(Mock\StringArgumentsComplex::class, ['bar' => 'foobar']);
+        $instance2 = $container->make(Mock\StringArgumentsComplex::class, ['bar' => 'barfoo']);
+
+        $this->assertNotSame($instance1, $instance2);
     }
 
     public function testSameDependeny()
@@ -673,25 +723,6 @@ class ContainerTest extends TestCase
         $this->assertSame('{test}', $container->get(Mock\StringArguments::class)->getFoo());
     }
 
-    public function testServiceWhichUsesMethodResult()
-    {
-        $config = [
-            Mock\StringArguments::class => [
-                'arguments' => [
-                    'foo' => 'bar',
-                ],
-                'selects' => [
-                    [
-                        'method' => 'getFoo',
-                    ],
-                ],
-            ],
-        ];
-
-        $container = new Container($config);
-        $this->assertSame('bar', $container->get(Mock\StringArguments::class));
-    }
-
     public function testServiceWhichUsesMethodResultInCallsDefintion()
     {
         $config = [
@@ -716,12 +747,14 @@ class ContainerTest extends TestCase
     {
         $config = [
             Mock\ClassDependencyRequiredArguments::class => [
-                'selects' => [
+                'calls' => [
                     [
                         'method' => 'getDependency',
+                        'select' => true,
                     ],
                     [
                         'method' => 'getFoo',
+                        'select' => true,
                     ],
                 ],
             ],
