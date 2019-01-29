@@ -16,7 +16,7 @@ class Config
     /**
      * Config.
      *
-     * @var array
+     * @var iterable
      */
     protected $config = [];
 
@@ -37,7 +37,7 @@ class Config
     /**
      * Create container.
      */
-    public function __construct(array $config, RuntimeContainer $container)
+    public function __construct(Iterable $config, RuntimeContainer $container)
     {
         $this->config = $config;
         $this->container = $container;
@@ -46,7 +46,7 @@ class Config
     /**
      * Get config.
      */
-    public function getConfig(): array
+    public function getConfig(): Iterable
     {
         return $this->config;
     }
