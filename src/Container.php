@@ -25,7 +25,7 @@ class Container implements ContainerInterface
     /**
      * Create container.
      */
-    public function __construct(array $config = [], ?ContainerInterface $parent = null)
+    public function __construct(Iterable $config = [], ?ContainerInterface $parent = null)
     {
         $this->container = new RuntimeContainer($config, $parent, $this);
     }
