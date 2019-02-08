@@ -634,6 +634,23 @@ class ContainerTest extends TestCase
         $this->assertSame('bar', $service->getBar());
     }
 
+    public function testConfigUseWithEnv()
+    {
+        putenv('FOO='.Mock\StringArguments::class);
+
+        $config = [
+            'bar' => [
+                'use' => '{ENV(FOO)}',
+                'arguments' => [
+                    'foo' => 'bar',
+                ],
+            ],
+        ];
+
+        $container = new Container($config);
+        $this->assertSame('bar', $container->get('bar')->getFoo());
+    }
+
     public function testConfigGetServiceWithEnv()
     {
         putenv('FOO=bar');

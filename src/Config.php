@@ -125,12 +125,13 @@ class Config
         }
 
         $class = $name;
+
         if (isset($config['use'])) {
             if (!is_string($config['use'])) {
                 throw new Exception\InvalidConfiguration('use must be a string for service '.$name);
             }
 
-            $class = $config['use'];
+            $class = $config['use'] = $this->getEnv($config['use']);
         }
 
         if (preg_match('#^\{([^{}]+)\}$#', $class)) {
@@ -142,7 +143,7 @@ class Config
         $config = $this->mergeServiceConfig($name, $class, $config);
 
         if (isset($config['use'])) {
-            $class = $config['use'];
+            $class = $config['use'] = $this->getEnv($config['use']);
         }
 
         if (!class_exists($class)) {
