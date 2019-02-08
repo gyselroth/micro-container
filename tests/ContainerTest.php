@@ -642,8 +642,8 @@ class ContainerTest extends TestCase
             'bar' => [
                 'use' => '{ENV(FOO)}',
                 'arguments' => [
-                    'foo' => 'bar'
-                ]
+                    'foo' => 'bar',
+                ],
             ],
         ];
 

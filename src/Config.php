@@ -70,7 +70,7 @@ class Config
             $this->compiled[$name] = $this->createServiceConfig($name);
             $config = $this->compiled[$name];
         }
-        
+
         if (!isset($config['use'])) {
             $config['use'] = $name;
         }
@@ -125,7 +125,7 @@ class Config
         }
 
         $class = $name;
-        
+
         if (isset($config['use'])) {
             if (!is_string($config['use'])) {
                 throw new Exception\InvalidConfiguration('use must be a string for service '.$name);
@@ -133,7 +133,7 @@ class Config
 
             $class = $config['use'] = $this->getEnv($config['use']);
         }
-        
+
         if (preg_match('#^\{([^{}]+)\}$#', $class)) {
             $config = array_merge($this->getServiceDefaults(), $config);
 
