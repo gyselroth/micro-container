@@ -1,3 +1,10 @@
+## 2.1.1
+**Maintainer**: Raffael Sahli <sahli@gyselroth.com>\
+**Date**: Fri Feb 08 11:41:32  CET 2019
+
+* [FEATURE] Use ENV variable in a use statement #19
+
+
 ## 2.1.0
 **Maintainer**: Raffael Sahli <sahli@gyselroth.com>\
 **Date**: Mon Jan 28 11:26:33  CET 2019
