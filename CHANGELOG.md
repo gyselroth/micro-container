@@ -1,3 +1,10 @@
+## 2.1.2
+**Maintainer**: Raffael Sahli <sahli@gyselroth.com>\
+**Date**: Tue May 21 15:18:32  CEST 2019
+
+* [FIX]  calls is ignored if service (class) has no constructor #21
+
+
 ## 2.1.1
 **Maintainer**: Raffael Sahli <sahli@gyselroth.com>\
 **Date**: Fri Feb 08 11:41:32  CET 2019
