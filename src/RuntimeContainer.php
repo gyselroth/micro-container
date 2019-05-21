@@ -58,7 +58,7 @@ class RuntimeContainer
     /**
      * Create container.
      */
-    public function __construct(Iterable $config, $parent, ContainerInterface $interface)
+    public function __construct(iterable $config, $parent, ContainerInterface $interface)
     {
         $this->config = new Config($config, $this);
         $this->parent = $parent;

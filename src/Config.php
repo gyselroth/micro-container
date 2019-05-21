@@ -37,7 +37,7 @@ class Config
     /**
      * Create container.
      */
-    public function __construct(Iterable $config, RuntimeContainer $container)
+    public function __construct(iterable $config, RuntimeContainer $container)
     {
         $this->config = $config;
         $this->container = $container;
@@ -46,7 +46,7 @@ class Config
     /**
      * Get config.
      */
-    public function getConfig(): Iterable
+    public function getConfig(): iterable
     {
         return $this->config;
     }
