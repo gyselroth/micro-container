@@ -917,4 +917,21 @@ class ContainerTest extends TestCase
         $container = new Container([]);
         $service = $container->get(Mock\ClassDependencySelf::class);
     }
+
+    public function testCallsNoConstructor()
+    {
+        $config = [
+            Mock\Simple::class => [
+                'calls' => [[
+                    'method' => 'set',
+                    'arguments' => [
+                        'value' => 'bar',
+                    ],
+                ]],
+            ],
+        ];
+
+        $container = new Container($config);
+        $this->assertSame('bar', $container->get(Mock\Simple::class)->get());
+    }
 }

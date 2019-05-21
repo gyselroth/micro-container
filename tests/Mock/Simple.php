@@ -13,8 +13,22 @@ namespace Micro\Container\Testsuite\Mock;
 
 class Simple
 {
+    protected $value;
+
     public function test(): bool
     {
         return true;
+    }
+
+    public function set($value): self
+    {
+        $this->value = $value;
+
+        return $this;
+    }
+
+    public function get()
+    {
+        return $this->value;
     }
 }

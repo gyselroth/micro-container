@@ -194,7 +194,7 @@ class RuntimeContainer
         $constructor = $reflection->getConstructor();
 
         if (null === $constructor) {
-            return $this->storeService($name, $config, new $class());
+            return $this->createInstance($name, $reflection, [], $config);
         }
 
         $args = $this->autoWireMethod($name, $constructor, $config, $parameters);
