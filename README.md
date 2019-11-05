@@ -245,6 +245,34 @@ $config = [
 ];
 ```
 
+#### Batching multiple calls
+
+If a lot of calls need to be made with the same pattern, there is a possibility to use `batch` which allows
+to define a method signature using `arguments` and list all calls in `batch`:
+
+Example:
+```php
+RouteCollector::class => [
+    'calls' => [[
+        'method' => 'addRoute',
+        'arguments' => [
+            'httpMethod',
+            'route',
+            'handler',
+        ],
+        'batch' => [
+            ['GET', '/api/v2', [Specifications::class, 'getApi']],
+            ['GET', '/api/v2/users', [v2\Users::class, 'getAll']],
+            ['GET', '/api/v2/users/{user}', [v2\Users::class, 'getOne']],
+            ['POST', '/api/v2/users', [v2\Users::class, 'post']],
+            ['PUT', '/api/v2/users/{user}', [v2\Users::class, 'put']],
+            ['PATCH', '/api/v2/users/{users}', [v2\Users::class, 'patch']],
+            ['DELETE', '/api/v2/users/{user}', [v2\Users::class, 'delete']],
+        ]
+    ]
+]
+```
+
 ### Reference to other services
 If you want to pass another service you can wrap your value into `{service name}`. This will let the container to search for a service called 'service name'.
 
