@@ -1,8 +1,15 @@
+## 2.2.0
+**Maintainer**: Raffael Sahli <sahli@gyselroth.com>\
+**Date**: Tue Nov 06 09:20:32 CET 2019
+
+* [FEATURE] Support for `batch` calls
+
+
 ## 2.1.2
 **Maintainer**: Raffael Sahli <sahli@gyselroth.com>\
-**Date**: Tue May 21 15:18:32  CEST 2019
+**Date**: Tue May 21 15:18:32 CEST 2019
 
-* [FIX]  calls is ignored if service (class) has no constructor #21
+* [FIX] `calls` is ignored if service (class) has no constructor #21
 
 
 ## 2.1.1

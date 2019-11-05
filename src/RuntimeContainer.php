@@ -272,6 +272,7 @@ class RuntimeContainer
             }
 
             $arguments = [];
+            $result = null;
 
             try {
                 $method = $class->getMethod($call['method']);
@@ -279,8 +280,16 @@ class RuntimeContainer
                 throw new Exception\InvalidConfiguration('method '.$call['method'].' is not callable in class '.$class->getName().' for service '.$name);
             }
 
-            $arguments = $this->autoWireMethod($name, $method, $call);
-            $result = call_user_func_array([&$service, $call['method']], $arguments);
+            if (isset($call['batch']) && is_array($call['batch'])) {
+                foreach ($call['batch'] as $sub) {
+                    $args = array_combine($call['arguments'], $sub);
+                    $arguments = $this->autoWireMethod($name, $method, $call, $args);
+                    $result = call_user_func_array([&$service, $call['method']], $arguments);
+                }
+            } else {
+                $arguments = $this->autoWireMethod($name, $method, $call);
+                $result = call_user_func_array([&$service, $call['method']], $arguments);
+            }
 
             if (isset($call['select']) && true === $call['select']) {
                 $service = $result;

@@ -81,6 +81,32 @@ class ContainerTest extends TestCase
         $this->assertSame('foo', $service->getFoo());
     }
 
+    public function testBatchCall()
+    {
+        $config = [
+            Mock\StringArgumentsComplex::class => [
+                'arguments' => [
+                    'bar' => 'foo',
+                ],
+                'calls' => [[
+                    'method' => 'addFooToList',
+                    'arguments' => [
+                        'bar',
+                    ],
+                    'batch' => [
+                        ['foo'],
+                        ['fooo'],
+                        ['foooo'],
+                    ],
+                ]],
+            ],
+        ];
+
+        $container = new Container($config);
+        $service = $container->get(Mock\StringArgumentsComplex::class);
+        $this->assertSame(['foo', 'fooo', 'foooo'], $service->getFooList());
+    }
+
     public function testAddWithConstructorArgumentsOnlySetOneArgument()
     {
         $config = [

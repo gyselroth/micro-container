@@ -15,6 +15,7 @@ class StringArgumentsComplex
 {
     protected $bar;
     protected $foo;
+    protected $foolist = [];
 
     public function __construct(string $bar, string $foo = 'bar')
     {
@@ -46,5 +47,15 @@ class StringArgumentsComplex
     public function setBar(string $bar)
     {
         $this->bar = $bar;
+    }
+
+    public function addFooToList(string $bar)
+    {
+        $this->foolist[] = $bar;
+    }
+
+    public function getFooList()
+    {
+        return $this->foolist;
     }
 }
