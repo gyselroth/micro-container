@@ -407,6 +407,26 @@ class ContainerTest extends TestCase
         $this->assertSame($container, $container->get(ContainerInterface::class));
     }
 
+    public function testClosureBoundToContainer()
+    {
+        $config = [
+            Mock\Closure::class => [
+                'calls' => [[
+                    'method' => 'set',
+                    'arguments' => [
+                        'test' => function () {
+                            $this->get(Mock\Closure::class);
+                        },
+                    ],
+                ]],
+                'singleton' => false,
+            ],
+        ];
+
+        $container = new Container($config);
+        $container->get(Mock\Closure::class)->get()();
+    }
+
     public function testSingleton()
     {
         $config = [
@@ -901,6 +921,76 @@ class ContainerTest extends TestCase
         $container = new Container($config);
         $this->assertInstanceOf(Closure::class, $container->get('bar'));
         $this->assertSame('bar', $container->get('bar')()->getFoo());
+    }
+
+    public function testIntValueFromEnv()
+    {
+        putenv('FOO=10');
+
+        $config = [
+            Mock\IntArguments::class => [
+                'arguments' => [
+                    'foo' => '{ENV(FOO)}',
+                ],
+            ],
+        ];
+
+        $container = new Container($config);
+        $this->assertSame(10, $container->get(Mock\IntArguments::class)->getFoo());
+    }
+
+    public function testIntDefaultValueFromEnv()
+    {
+        $config = [
+            Mock\IntArguments::class => [
+                'arguments' => [
+                    'foo' => '{ENV(FOOBAR,20)}',
+                ],
+            ],
+        ];
+
+        $container = new Container($config);
+        $this->assertSame(20, $container->get(Mock\IntArguments::class)->getFoo());
+    }
+
+    public function testCustomTypeValueFromEnv()
+    {
+        putenv('FOO=2.2');
+
+        $config = [
+            Mock\Simple::class => [
+                'calls' => [[
+                    'method' => 'set',
+                    'arguments' => [
+                        'value' => '{ENV(FOO,1.0)(float)}',
+                    ],
+                ]],
+            ],
+        ];
+
+        $container = new Container($config);
+        $service = $container->get(Mock\Simple::class);
+        $this->assertSame(2.2, $service->get());
+    }
+
+    public function testJsonTypeValueFromEnv()
+    {
+        putenv('FOO={"foo":"bar"}');
+
+        $config = [
+            Mock\Simple::class => [
+                'calls' => [[
+                    'method' => 'set',
+                    'arguments' => [
+                        'value' => '{ENV(FOO)(json)}',
+                    ],
+                ]],
+            ],
+        ];
+
+        $container = new Container($config);
+        $service = $container->get(Mock\Simple::class);
+        $this->assertSame(['foo' => 'bar'], $service->get());
     }
 
     public function testNonStringConstructor()
