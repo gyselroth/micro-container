@@ -1,3 +1,12 @@
+## 2.3.0
+**Maintainer**: Raffael Sahli <sahli@gyselroth.com>\
+**Date**: Fri Nov 15 09:20:32 CET 2019
+
+* [CHANGE] Child serivce definiton does not override a parent definition
+* [CHANGE] Closure arguments are not bound to the container by default
+* [FEATURE] Added support for non string env params (including json)
+
+
 ## 2.2.0
 **Maintainer**: Raffael Sahli <sahli@gyselroth.com>\
 **Date**: Tue Nov 06 09:20:32 CET 2019

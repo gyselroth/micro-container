@@ -81,15 +81,11 @@ class Config
     /**
      * Parse env param.
      */
-    public function getEnv(string $param): string
+    public function getEnv(string $param, string $type = 'string')
     {
-        if (preg_match_all('#\{ENV\(([A-Za-z0-9_]+)(?:(,?)([^}]*))\)\}#', $param, $matches)) {
-            if (4 !== count($matches)) {
-                return $param;
-            }
-
+        if (preg_match_all('#\{ENV\(([A-Za-z0-9_]+)(?:(,?)(.*?))\)(?:\(([a-z]+)\))?\}#', $param, $matches)) {
             for ($i = 0; $i < count($matches[0]); ++$i) {
-                $param = $this->parseEnv($param, $matches, $i);
+                $param = $this->parseEnv($param, $matches, $i, $type);
             }
 
             return $param;
@@ -101,17 +97,31 @@ class Config
     /**
      * Parse env.
      */
-    protected function parseEnv(string $param, array $variables, int $key): string
+    protected function parseEnv(string $param, array $variables, int $key, string $type = 'string')
     {
+        $type = $type ?? 'string';
+        $value = null;
+
         $env = getenv($variables[1][$key]);
         if (false === $env && !empty($variables[3][$key])) {
-            return str_replace($variables[0][$key], $variables[3][$key], $param);
-        }
-        if (false === $env) {
+            $value = str_replace($variables[0][$key], $variables[3][$key], $param);
+        } elseif (false === $env) {
             throw new Exception\EnvVariableNotFound('env variable '.$variables[1][$key].' required but it is neither set not a default value exists');
+        } else {
+            $value = str_replace($variables[0][$key], $env, $param);
         }
 
-        return str_replace($variables[0][$key], $env, $param);
+        if (!empty($variables[4][$key])) {
+            $type = $variables[4][$key];
+        }
+
+        if ('json' === $type) {
+            return json_decode($value, true);
+        }
+
+        settype($value, $type);
+
+        return $value;
     }
 
     /**
@@ -188,12 +198,12 @@ class Config
         foreach ($tree as $parent_config) {
             foreach ($parents as $parent) {
                 if (isset($parent_config[$parent])) {
-                    $config = array_replace_recursive($config, $parent_config[$parent]);
+                    $config = array_replace_recursive($parent_config[$parent], $config);
                 }
             }
 
             if (isset($parent_config[$name])) {
-                $config = array_replace_recursive($config, $parent_config[$name]);
+                $config = array_replace_recursive($parent_config[$name], $config);
             }
         }
 

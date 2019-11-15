@@ -313,10 +313,17 @@ class RuntimeContainer
             $type = $param->getClass();
             $param_name = $param->getName();
 
+            $hint = $param->getType();
+            if (null === $hint) {
+                $hint = 'NULL';
+            } else {
+                $hint = $hint->getName();
+            }
+
             if (isset($parameters[$param_name])) {
                 $args[$param_name] = $parameters[$param_name];
             } elseif (isset($config['arguments'][$param_name])) {
-                $args[$param_name] = $this->parseParam($config['arguments'][$param_name], $name);
+                $args[$param_name] = $this->parseParam($config['arguments'][$param_name], $name, $hint);
             } elseif (null !== $type) {
                 $args[$param_name] = $this->resolveServiceArgument($name, $type, $param);
             } elseif ($param->isDefaultValueAvailable()) {
@@ -361,27 +368,31 @@ class RuntimeContainer
     /**
      * Parse param value.
      */
-    protected function parseParam($param, string $name)
+    protected function parseParam($param, string $name, string $type)
     {
         if (is_iterable($param)) {
             foreach ($param as $key => $value) {
-                $param[$key] = $this->parseParam($value, $name);
+                $param[$key] = $this->parseParam($value, $name, 'string');
             }
 
             return $param;
         }
 
         if (is_string($param)) {
-            $param = $this->config->getEnv($param);
-
-            if (preg_match('#^\{\{([^{}]+)\}\}$#', $param, $matches)) {
-                return '{'.$matches[1].'}';
-            }
-            if (preg_match('#^\{([^{}]+)\}$#', $param, $matches)) {
-                return $this->traverseTree($name, $matches[1]);
+            $param = $this->config->getEnv($param, $type);
+            if (is_string($param)) {
+                if (preg_match('#^\{\{([^{}]+)\}\}$#', $param, $matches)) {
+                    return '{'.$matches[1].'}';
+                }
+                if (preg_match('#^\{([^{}]+)\}$#', $param, $matches)) {
+                    return $this->traverseTree($name, $matches[1]);
+                }
             }
 
             return $param;
+        }
+        if ($param instanceof \Closure) {
+            $param = $param->bindTo($this);
         }
 
         return $param;

@@ -1,8 +1,6 @@
 parameters:
     ignoreErrors:
-        - '#Function apc_exists not found#'
-        - '#Function apc_store not found#'
-        - '#Function apc_get not found#'
+        - '#Call to an undefined method Micro\\Container\\Testsuite\\ContainerTest\:\:get\(\)#'
 
     reportUnmatchedIgnoredErrors: false
 includes:
