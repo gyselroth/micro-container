@@ -315,7 +315,7 @@ class RuntimeContainer
 
             $hint = $param->getType();
             if (null === $hint) {
-                $hint = 'NULL';
+                $hint = 'string';
             } else {
                 $hint = $hint->getName();
             }
@@ -368,7 +368,7 @@ class RuntimeContainer
     /**
      * Parse param value.
      */
-    protected function parseParam($param, string $name, string $type)
+    protected function parseParam($param, string $name, string $type = 'string')
     {
         if (is_iterable($param)) {
             foreach ($param as $key => $value) {
