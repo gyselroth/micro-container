@@ -1,3 +1,10 @@
+## 2.3.1
+**Maintainer**: Raffael Sahli <sahli@gyselroth.com>\
+**Date**: Tue Nov 19 12:33:32 CET 2019
+
+* [FIX] env variables which get injected to an argument with no type hint are now a string and not null
+
+
 ## 2.3.0
 **Maintainer**: Raffael Sahli <sahli@gyselroth.com>\
 **Date**: Fri Nov 15 09:20:32 CET 2019

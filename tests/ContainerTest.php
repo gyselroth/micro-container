@@ -695,6 +695,27 @@ class ContainerTest extends TestCase
 
         $container = new Container($config);
         $this->assertSame('bar', $container->get('bar')->getFoo());
+        putenv('FOO');
+    }
+
+    public function testConfigEnvUntypedStringValue()
+    {
+        putenv('FOO=barfoo');
+
+        $config = [
+            Mock\Simple::class => [
+                'calls' => [[
+                    'method' => 'set',
+                    'arguments' => [
+                        'value' => '{ENV(FOO,bar)}',
+                    ],
+                ]],
+            ],
+        ];
+
+        $container = new Container($config);
+        $this->assertSame('barfoo', $container->get(Mock\Simple::class)->get());
+        putenv('FOO');
     }
 
     public function testConfigGetServiceWithEnv()
