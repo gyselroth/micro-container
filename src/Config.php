@@ -83,7 +83,7 @@ class Config
      */
     public function getEnv(string $param, string $type = 'string')
     {
-        if (preg_match_all('#\{ENV\(([A-Za-z0-9_]+)(?:(,?)(.*?))\)(?:\(([a-z]+)\))?\}#', $param, $matches)) {
+        if (preg_match_all('#\{ENV\(([A-Za-z0-9_]+)(?:(,?)(.*?))\)(?:\(([a-z]+)\))?\}#s', $param, $matches)) {
             for ($i = 0; $i < count($matches[0]); ++$i) {
                 $param = $this->parseEnv($param, $matches, $i, $type);
             }
