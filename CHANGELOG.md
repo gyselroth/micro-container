@@ -1,3 +1,10 @@
+## 2.3.2
+**Maintainer**: Raffael Sahli <sahli@gyselroth.com>\
+**Date**: Tue Nov 19 12:45:32 CET 2019
+
+* [FIX] new line characters does not get matched used in ENV() default value
+
+
 ## 2.3.1
 **Maintainer**: Raffael Sahli <sahli@gyselroth.com>\
 **Date**: Tue Nov 19 12:33:32 CET 2019
