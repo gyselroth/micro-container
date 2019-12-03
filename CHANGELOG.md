@@ -1,3 +1,10 @@
+## 2.3.3
+**Maintainer**: Raffael Sahli <sahli@gyselroth.com>\
+**Date**: Tue Dez 03 15:00:22 CET 2019
+
+* [FIX] Parent service definition does overwrite container settings like `singleton`
+
+
 ## 2.3.2
 **Maintainer**: Raffael Sahli <sahli@gyselroth.com>\
 **Date**: Tue Nov 19 12:45:32 CET 2019

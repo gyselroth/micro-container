@@ -548,6 +548,20 @@ class ContainerTest extends TestCase
         $this->assertSame('bar', $service2->getFoo());
     }
 
+    public function testConfigureContainerSettingViaInterface()
+    {
+        $config = [
+            Mock\StringArgumentsInterface::class => [
+                'singleton' => false,
+            ],
+        ];
+
+        $container = new Container($config);
+        $service = $container->get(Mock\StringArgumentsChild::class);
+        $service2 = $container->get(Mock\StringArgumentsChild::class);
+        $this->assertNotSame($service, $service2);
+    }
+
     public function testGetLazyService()
     {
         $config = [
