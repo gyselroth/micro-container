@@ -183,18 +183,13 @@ class Config
      */
     protected function mergeServiceConfig(string $name, string $class, array $config): array
     {
-        $config = array_merge($this->getServiceDefaults(), $config);
-
-        if (!class_exists($class) && !interface_exists($class)) {
-            return $config;
-        }
-
-        if (false === $config['merge']) {
-            return $config;
+        if (!class_exists($class) && !interface_exists($class) || isset($config['merge']) && false === $config['merge']) {
+            return array_merge($this->getServiceDefaults(), $config);
         }
 
         $tree = $this->getConfigTree();
         $parents = array_merge(class_implements($class), class_parents($class));
+
         foreach ($tree as $parent_config) {
             foreach ($parents as $parent) {
                 if (isset($parent_config[$parent])) {
@@ -207,7 +202,7 @@ class Config
             }
         }
 
-        return $config;
+        return array_merge($this->getServiceDefaults(), $config);
     }
 
     /**
