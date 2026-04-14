@@ -99,7 +99,6 @@ class Config
      */
     protected function parseEnv(string $param, array $variables, int $key, string $type = 'string')
     {
-        $type = $type ?? 'string';
         $value = null;
 
         $env = getenv($variables[1][$key]);

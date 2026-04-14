@@ -1,7 +1,6 @@
 parameters:
+    level: 1
     ignoreErrors:
         - '#Call to an undefined method Micro\\Container\\Testsuite\\ContainerTest\:\:get\(\)#'
 
     reportUnmatchedIgnoredErrors: false
-includes:
-    - vendor/phpstan/phpstan/conf/config.level1.neon

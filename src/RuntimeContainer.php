@@ -14,6 +14,7 @@ namespace Micro\Container;
 use ProxyManager\Factory\LazyLoadingValueHolderFactory;
 use Psr\Container\ContainerInterface;
 use ReflectionClass;
+use ReflectionException;
 use ReflectionMethod;
 use ReflectionParameter;
 use RuntimeException;
@@ -310,7 +311,21 @@ class RuntimeContainer
         $args = [];
 
         foreach ($params as $param) {
-            $type = $param->getClass();
+            if ($param->getType() && !$param->getType()->isBuiltin()) {
+                try {
+                    $type = new ReflectionClass($param->getType()->getName());
+                } catch (ReflectionException $e) {
+                    throw new RuntimeException(
+                        "Failed to resolve dependency: {$param->getType()->getName()}",
+                        0,
+                        $e
+                    );
+                }
+
+            } else {
+                $type = null;
+            }
+
             $param_name = $param->getName();
 
             $hint = $param->getType();
