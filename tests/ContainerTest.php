@@ -1,23 +1,20 @@
 <?php
 
 declare(strict_types=1);
-
 /**
  * Micro\Container
  *
- * @copyright   Copryright (c) 2018-2019 gyselroth GmbH (https://gyselroth.com)
+ * @copyright   Copyright (c) 2018-2026 gyselroth GmbH (https://gyselroth.com)
  * @license     MIT https://opensource.org/licenses/MIT
  */
 
 namespace Micro\Container\Testsuite;
 
-use Closure;
 use Micro\Container\Container;
 use Micro\Container\Exception;
 use PHPUnit\Framework\TestCase;
 use ProxyManager\Proxy\ProxyInterface;
 use Psr\Container\ContainerInterface;
-use RuntimeException;
 
 class ContainerTest extends TestCase
 {
@@ -954,7 +951,7 @@ class ContainerTest extends TestCase
         ];
 
         $container = new Container($config);
-        $this->assertInstanceOf(Closure::class, $container->get('bar'));
+        $this->assertInstanceOf(\Closure::class, $container->get('bar'));
         $this->assertSame('bar', $container->get('bar')()->getFoo());
     }
 
@@ -1064,7 +1061,7 @@ class ContainerTest extends TestCase
 
     public function testDependencyBySelf()
     {
-        $this->expectException(RuntimeException::class);
+        $this->expectException(\RuntimeException::class);
         $container = new Container([]);
         $service = $container->get(Mock\ClassDependencySelf::class);
     }

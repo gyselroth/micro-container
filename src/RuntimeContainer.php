@@ -1,11 +1,10 @@
 <?php
 
 declare(strict_types=1);
-
 /**
  * Micro\Container
  *
- * @copyright   Copryright (c) 2018-2019 gyselroth GmbH (https://gyselroth.com)
+ * @copyright   Copyright (c) 2018-2026 gyselroth GmbH (https://gyselroth.com)
  * @license     MIT https://opensource.org/licenses/MIT
  */
 
@@ -13,11 +12,6 @@ namespace Micro\Container;
 
 use ProxyManager\Factory\LazyLoadingValueHolderFactory;
 use Psr\Container\ContainerInterface;
-use ReflectionClass;
-use ReflectionException;
-use ReflectionMethod;
-use ReflectionParameter;
-use RuntimeException;
 
 class RuntimeContainer
 {
@@ -51,8 +45,6 @@ class RuntimeContainer
 
     /**
      * Parent service.
-     *
-     * @var mixed
      */
     protected $parent_service;
 
@@ -182,7 +174,7 @@ class RuntimeContainer
             return $this->wireReference($name, $match[1], $config);
         }
 
-        $reflection = new ReflectionClass($class);
+        $reflection = new \ReflectionClass($class);
 
         if (isset($config['factory'])) {
             $factory = $reflection->getMethod($config['factory']);
@@ -209,7 +201,7 @@ class RuntimeContainer
     protected function wireReference(string $name, string $reference, array $config)
     {
         $service = $this->get($reference);
-        $reflection = new ReflectionClass(get_class($service));
+        $reflection = new \ReflectionClass(get_class($service));
         $config = $this->config->get($name);
         $service = $this->prepareService($name, $service, $reflection, $config);
 
@@ -219,7 +211,7 @@ class RuntimeContainer
     /**
      * Get instance (virtual or real instance).
      */
-    protected function createInstance(string $name, ReflectionClass $class, array $arguments, array $config)
+    protected function createInstance(string $name, \ReflectionClass $class, array $arguments, array $config)
     {
         if (true === $config['lazy']) {
             return $this->getProxyInstance($name, $class, $arguments, $config);
@@ -231,14 +223,14 @@ class RuntimeContainer
     /**
      * Create proxy instance.
      */
-    protected function getProxyInstance(string $name, ReflectionClass $class, array $arguments, array $config)
+    protected function getProxyInstance(string $name, \ReflectionClass $class, array $arguments, array $config)
     {
         $factory = new LazyLoadingValueHolderFactory();
         $that = $this;
 
         return $factory->createProxy(
             $class->getName(),
-            function (&$wrappedObject, $proxy, $method, $parameters, &$initializer) use ($that, $name,$class,$arguments,$config) {
+            function (&$wrappedObject, $proxy, $method, $parameters, &$initializer) use ($that, $name, $class, $arguments, $config) {
                 $wrappedObject = $that->getRealInstance($name, $class, $arguments, $config);
                 $initializer = null;
             }
@@ -248,7 +240,7 @@ class RuntimeContainer
     /**
      * Create real instance.
      */
-    protected function getRealInstance(string $name, ReflectionClass $class, array $arguments, array $config)
+    protected function getRealInstance(string $name, \ReflectionClass $class, array $arguments, array $config)
     {
         $instance = $class->newInstanceArgs($arguments);
         $instance = $this->prepareService($name, $instance, $class, $config);
@@ -259,7 +251,7 @@ class RuntimeContainer
     /**
      * Prepare service (execute sub selects and excute setter injections).
      */
-    protected function prepareService(string $name, $service, ReflectionClass $class, array $config)
+    protected function prepareService(string $name, $service, \ReflectionClass $class, array $config)
     {
         $this->storeService($name, $config, $service);
 
@@ -305,7 +297,7 @@ class RuntimeContainer
     /**
      * Autowire method.
      */
-    protected function autoWireMethod(string $name, ReflectionMethod $method, array $config, ?array $parameters = null): array
+    protected function autoWireMethod(string $name, \ReflectionMethod $method, array $config, ?array $parameters = null): array
     {
         $params = $method->getParameters();
         $args = [];
@@ -313,15 +305,10 @@ class RuntimeContainer
         foreach ($params as $param) {
             if ($param->getType() && !$param->getType()->isBuiltin()) {
                 try {
-                    $type = new ReflectionClass($param->getType()->getName());
-                } catch (ReflectionException $e) {
-                    throw new RuntimeException(
-                        "Failed to resolve dependency: {$param->getType()->getName()}",
-                        0,
-                        $e
-                    );
+                    $type = new \ReflectionClass($param->getType()->getName());
+                } catch (\ReflectionException $e) {
+                    throw new \RuntimeException("Failed to resolve dependency: {$param->getType()->getName()}", 0, $e);
                 }
-
             } else {
                 $type = null;
             }
@@ -361,12 +348,12 @@ class RuntimeContainer
     /**
      * Resolve service argument.
      */
-    protected function resolveServiceArgument(string $name, ReflectionClass $type, ReflectionParameter $param)
+    protected function resolveServiceArgument(string $name, \ReflectionClass $type, \ReflectionParameter $param)
     {
         $type_class = $type->getName();
 
         if ($type_class === $name) {
-            throw new RuntimeException('class '.$type_class.' can not depend on itself');
+            throw new \RuntimeException('class '.$type_class.' can not depend on itself');
         }
 
         try {

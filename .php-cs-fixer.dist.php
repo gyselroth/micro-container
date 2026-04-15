@@ -1,16 +1,16 @@
 <?php
 
-use PhpCsFixer\Config;
-use PhpCsFixer\Finder;
-
 $header = <<<'EOF'
 Micro\Container
 
-@copyright   Copyright (c) 2018-2019 gyselroth GmbH (https://gyselroth.com)
+@copyright   Copyright (c) 2018-2026 gyselroth GmbH (https://gyselroth.com)
 @license     MIT https://opensource.org/licenses/MIT
 EOF;
 
-$config = Config::create()
+$finder = (new PhpCsFixer\Finder())
+    ->in(__DIR__);
+
+$config = (new PhpCsFixer\Config())
     ->setRiskyAllowed(true)
     ->setRules([
         '@PSR12' => true,
@@ -40,27 +40,7 @@ $config = Config::create()
         // --- strictness ---
         'strict_comparison' => true,
         'strict_param' => true,
-        'declare_strict_types' => true,
-
-        // --- cleanup rules (safe modern replacements) ---
-        'no_useless_else' => true,
-        'no_useless_return' => true,
-        'no_superfluous_elseif' => true,
-        'no_unneeded_curly_braces' => true,
-        'no_extra_blank_lines' => true,
-
-        // --- null / structure cleanup ---
-        'no_null_property_initialization' => true,
-
-        // --- comments style ---
-        'single_line_comment_style' => [
-            'comment_types' => ['hash'],
-        ],
     ])
-    ->setFinder(
-        Finder::create()
-            ->exclude(['build', 'vendor'])
-            ->in(__DIR__)
-    );
+    ->setFinder($finder);
 
 return $config;
